@@ -1,0 +1,10 @@
+[package]
+name = "roco-resolved-protocol"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "roco_resolved_protocol"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
