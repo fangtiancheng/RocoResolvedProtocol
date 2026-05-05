@@ -100,6 +100,24 @@ pub struct TestModeDispatchResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestModeStopRequest {
+    pub target_uin: u32,
+    pub request_id: String,
+    pub issued_at_unix_ms: u64,
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestModeStopResponse {
+    pub delivered: bool,
+    pub request_id: String,
+    pub target_uin: u32,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum TestModeServerMessage {
     RunScript(TestModeRunScriptMessage),
@@ -121,6 +139,8 @@ pub struct TestModeRunScriptMessage {
 #[serde(rename_all = "camelCase")]
 pub struct TestModeStopScriptMessage {
     pub request_id: String,
+    pub issued_at_unix_ms: u64,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,6 +151,7 @@ pub enum TestModeClientMessage {
     ScriptStarted(TestModeScriptStartedMessage),
     ScriptFinished(TestModeScriptFinishedMessage),
     ScriptFailed(TestModeScriptFailedMessage),
+    ScriptStopped(TestModeScriptStoppedMessage),
     HistoryUploaded(TestModeHistoryUploadedMessage),
     Error(TestModeErrorMessage),
 }
@@ -173,6 +194,15 @@ pub struct TestModeScriptFailedMessage {
     pub request_id: String,
     pub finished_at_unix_ms: u64,
     pub error: String,
+    pub output_tail: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestModeScriptStoppedMessage {
+    pub request_id: String,
+    pub stopped_at_unix_ms: u64,
+    pub reason: Option<String>,
     pub output_tail: Vec<String>,
 }
 
