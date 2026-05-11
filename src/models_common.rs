@@ -16,6 +16,33 @@ pub enum CombatHistorySideHint {
     Unknown,
 }
 
+pub fn resolve_combat_history_side(
+    id: u32,
+    participant_type: u8,
+    my_uin: u32,
+    my_participant_type: u8,
+    rival_uin: u32,
+    rival_participant_type: u8,
+) -> CombatHistorySideHint {
+    if id == my_uin {
+        return CombatHistorySideHint::My;
+    }
+    if id == rival_uin {
+        return CombatHistorySideHint::Rival;
+    }
+    if participant_type == 0 {
+        return CombatHistorySideHint::My;
+    }
+
+    let matches_my_type = participant_type != 0 && participant_type == my_participant_type;
+    let matches_rival_type = participant_type != 0 && participant_type == rival_participant_type;
+    match (matches_my_type, matches_rival_type) {
+        (true, false) => CombatHistorySideHint::My,
+        (false, true) => CombatHistorySideHint::Rival,
+        _ => CombatHistorySideHint::Unknown,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistoryFieldEffect {

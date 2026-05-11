@@ -156,6 +156,12 @@ pub struct CombatHistoryResultInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackEvent {
+    #[serde(default = "default_unknown_side_hint")]
+    pub actor_side: CombatHistorySideHint,
+    #[serde(default)]
+    pub action: CombatHistoryRoundAction,
+    #[serde(default)]
+    pub raw: CombatHistoryRawAttackFields,
     pub offense_id: u32,
     pub offense_type: u8,
     pub offense_index: u8,
@@ -169,6 +175,43 @@ pub struct CombatHistoryAttackEvent {
     pub is_miss: bool,
     pub restrain_hint: i8,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryRawAttackFields {
+    pub offense_id: u32,
+    pub offense_type: u8,
+    pub offense_index: u8,
+    pub defense_id: u32,
+    pub defense_type: u8,
+    pub defense_index: u8,
+    pub skill_type: u8,
+    pub skill_id: u32,
+}
+
+fn default_unknown_side_hint() -> CombatHistorySideHint {
+    CombatHistorySideHint::Unknown
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryRoundAction {
+    Skill {
+        user_index: u8,
+        skill_id: u32,
+    },
+    UseItem {
+        user_index: u8,
+        item_id: u32,
+    },
+    ChangeSpirit {
+        old_index: u8,
+        new_index: u8,
+    },
+    Escape,
+    #[default]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
