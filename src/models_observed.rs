@@ -233,7 +233,21 @@ pub struct CombatHistoryAttackAffectEvent {
     pub all_spirits_hp: Vec<u16>,
     pub restrain_type: i8,
     pub immunity_status_ids: Vec<u16>,
-    pub buff_status_ids: Vec<u8>,
+    pub status_changes: Vec<CombatHistoryStatusChange>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryStatusChangeKind {
+    Add,
+    Remove,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryStatusChange {
+    pub status_id: u8,
+    pub kind: CombatHistoryStatusChangeKind,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
