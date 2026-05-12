@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CombatHistoryFieldEffect, CombatHistoryGuardianPetStats, CombatHistoryIntimacy,
-    CombatHistoryNormalizedStatus, CombatHistoryParticipantDisplayState,
-    CombatHistoryParticipantIdentity, CombatHistorySkillState, CombatHistorySpiritEquipment,
-    CombatHistorySpiritPanelStats, CombatHistorySpiritProperties,
+    CombatHistoryGuardianPetStats, CombatHistoryIntimacy, CombatHistoryNormalizedStatus,
+    CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
+    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritPanelStats,
+    CombatHistorySpiritProperties, CombatHistoryWeatherEffect,
 };
 
 /// Resolved history contains complete information from all participants
@@ -99,8 +99,7 @@ pub struct CombatHistoryResolvedSpiritSnapshot {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryResolvedWeatherSnapshot {
-    pub raw_weather: u8,
-    pub raw_round_flag: Option<u8>,
-    pub normalized_field_effect: Option<CombatHistoryFieldEffect>,
-    pub derived_remaining_rounds: Option<u8>,
+    pub effect: CombatHistoryWeatherEffect,
+    pub initial_rounds: Option<u8>,
+    pub remaining_rounds: Option<u8>,
 }

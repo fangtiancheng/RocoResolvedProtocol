@@ -134,14 +134,6 @@ impl CombatHistoryIntimacy {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryFightRequest {
-    pub req_type: u8,
-    pub spirit_index: u8,
-    pub action_value: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CombatHistoryReturnCode {
     pub code: i32,
     pub message: String,
