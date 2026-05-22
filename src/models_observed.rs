@@ -196,6 +196,14 @@ pub struct CombatHistoryAttackEvent {
     pub is_shaut: bool,
     pub is_miss: bool,
     pub restrain_hint: i8,
+    pub raw_skill_type: u8,
+    pub superform_type: u8,
+    pub raw_weather: u8,
+    pub skill_bg_flag: u8,
+    pub my_use_pp: u8,
+    pub other_use_pp: u8,
+    pub my_sp_state: Vec<u8>,
+    pub other_sp_state: Vec<u8>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
 }
 
@@ -227,13 +235,33 @@ pub enum CombatHistoryRoundAction {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackAffectEvent {
     pub id: u32,
+    pub affect_type: u8,
     pub index: u8,
+    pub is_pp: bool,
+    pub pp_var: Vec<u8>,
     pub hp_var: CombatHistoryHpVar,
     pub pro_vars: CombatHistorySpiritProperties,
     pub all_spirits_hp: Vec<u16>,
     pub restrain_type: i8,
-    pub immunity_status_ids: Vec<u16>,
+    pub immunity_vars: Vec<CombatHistoryImmunityInfo>,
+    pub raw_buff_vars: Vec<CombatHistoryBuffInfo>,
     pub status_changes: Vec<CombatHistoryStatusChange>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryImmunityInfo {
+    pub immunity_type: u8,
+    pub definite_id: u8,
+    pub type_id: u16,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryBuffInfo {
+    pub id: u8,
+    pub buff_type: u8,
+    pub cause: u8,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -247,6 +275,7 @@ pub enum CombatHistoryStatusChangeKind {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryStatusChange {
     pub status_id: u8,
+    pub cause: u8,
     pub kind: CombatHistoryStatusChangeKind,
 }
 
@@ -254,6 +283,7 @@ pub struct CombatHistoryStatusChange {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryBuffEvent {
     pub id: u32,
+    pub affect_type: u8,
     pub index: u8,
     pub buff_id: u8,
     pub hp_var: CombatHistoryHpVar,
@@ -261,6 +291,7 @@ pub struct CombatHistoryBuffEvent {
     pub is_remove: bool,
     pub is_other_pro: bool,
     pub other_id: u32,
+    pub other_type: u8,
     pub other_index: u8,
     pub other_buff_id: u8,
     pub other_hp_var: Option<CombatHistoryHpVar>,
