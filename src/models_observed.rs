@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     CombatHistoryFieldEffect, CombatHistoryGuardianPetStats, CombatHistoryHpVar,
     CombatHistoryIntimacy, CombatHistoryItem, CombatHistoryNewSpiritInfo,
-    CombatHistoryNormalizedStatus, CombatHistoryParticipantDisplayState,
-    CombatHistoryParticipantIdentity, CombatHistoryPerspective, CombatHistoryReturnCode,
-    CombatHistorySideHint, CombatHistorySkillState, CombatHistorySpiritEquipment,
-    CombatHistorySpiritPanelStats, CombatHistorySpiritProperties, CombatHistorySpiritPropertyVar,
+    CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
+    CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
+    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritPanelStats,
+    CombatHistorySpiritProperties, CombatHistorySpiritPropertyVar,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -289,13 +289,18 @@ pub struct CombatHistoryBuffEvent {
     pub hp_var: CombatHistoryHpVar,
     pub pro_vars: CombatHistorySpiritProperties,
     pub is_remove: bool,
-    pub is_other_pro: bool,
+    pub other: Option<CombatHistoryBuffOtherEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryBuffOtherEvent {
     pub other_id: u32,
     pub other_type: u8,
     pub other_index: u8,
     pub other_buff_id: u8,
-    pub other_hp_var: Option<CombatHistoryHpVar>,
-    pub other_pro_vars: Option<CombatHistorySpiritProperties>,
+    pub other_hp_var: CombatHistoryHpVar,
+    pub other_pro_vars: CombatHistorySpiritProperties,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -306,7 +311,7 @@ pub struct CombatHistoryChangeSpiritEvent {
     pub change_kind: CombatHistoryChangeSpiritKind,
     pub old_position: u8,
     pub new_position: u8,
-    pub buff_ids: Vec<u8>,
+    pub buffs: Vec<CombatHistoryBuffInfo>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -389,7 +394,6 @@ pub struct CombatHistoryObservedSpiritStateDelta {
     pub base_properties: Option<CombatHistorySpiritProperties>,
     pub spirit_state_bits_by_slot: Option<[u8; 6]>,
     pub abnormal_state_ids: Option<Vec<u8>>,
-    pub normalized_statuses: Option<Vec<CombatHistoryNormalizedStatus>>,
     pub pp_updates: Vec<CombatHistorySkillPpDelta>,
 }
 
@@ -468,9 +472,7 @@ pub struct CombatHistoryObservedSpiritSnapshot {
     pub extra_equipment_template_ids: Vec<u16>,
     pub base_properties: Option<CombatHistorySpiritProperties>,
     pub abnormal_state_ids: Vec<u32>,
-    pub normalized_statuses: Vec<CombatHistoryNormalizedStatus>,
     pub spirit_state_bits: Option<u8>,
-    pub capture_ratio: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

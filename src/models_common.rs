@@ -76,25 +76,6 @@ pub enum CombatHistoryFieldEffect {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CombatHistoryNormalizedStatus {
-    Sleep,
-    Numb,
-    Fear,
-    Burn,
-    Freeze,
-    Poison,
-    ToxicPoison,
-    Confusion,
-    Parasite,
-    Curse,
-    Bewilder,
-    Nightmare,
-    Bind,
-    Other,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub enum CombatHistoryIntimacyKind {
     Progress,
     Friendly,

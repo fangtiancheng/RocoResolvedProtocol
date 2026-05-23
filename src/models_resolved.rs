@@ -1,10 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CombatHistoryGuardianPetStats, CombatHistoryIntimacy, CombatHistoryNormalizedStatus,
-    CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
-    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritPanelStats,
-    CombatHistorySpiritProperties, CombatHistoryWeatherEffect,
+    CombatHistoryGuardianPetStats, CombatHistoryIntimacy, CombatHistoryParticipantDisplayState,
+    CombatHistoryParticipantIdentity, CombatHistorySkillState, CombatHistorySpiritEquipment,
+    CombatHistorySpiritPanelStats, CombatHistorySpiritProperties, CombatHistoryWeatherEffect,
 };
 
 /// Resolved history contains complete information from all participants
@@ -91,9 +90,7 @@ pub struct CombatHistoryResolvedSpiritSnapshot {
     pub extra_equipment_template_ids: Vec<u16>,
     pub base_properties: Option<CombatHistorySpiritProperties>,
     pub abnormal_state_ids: Vec<u32>,
-    pub normalized_statuses: Vec<CombatHistoryNormalizedStatus>,
     pub spirit_state_bits: Option<u8>,
-    pub capture_ratio: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
