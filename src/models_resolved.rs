@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     CombatHistoryGuardianPetStats, CombatHistoryIntimacy, CombatHistoryParticipantDisplayState,
     CombatHistoryParticipantIdentity, CombatHistorySkillState, CombatHistorySpiritEquipment,
-    CombatHistorySpiritPanelStats, CombatHistorySpiritProperties, CombatHistoryWeatherEffect,
+    CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStages, CombatHistorySpiritSex,
+    CombatHistorySpiritStatus, CombatHistoryWeatherSnapshot,
 };
 
 /// Resolved history contains complete information from all participants
@@ -36,20 +37,17 @@ pub struct CombatHistoryResolvedParticipantState {
 pub struct CombatHistoryResolvedSpiritState {
     pub spirit_id: u32,
     pub level: u8,
-    pub sex: u8,
+    pub sex: CombatHistorySpiritSex,
     pub current_hp: u16,
     pub max_hp: u16,
     pub skin_id: u32,
     pub talent_type: u16,
     pub talent_level: u16,
-    pub closeness: u8,
-    pub affiliation: u8,
     pub intimacy: CombatHistoryIntimacy,
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
-    pub extra_equipment_template_ids: Vec<u16>,
     pub panel_stats: Option<CombatHistorySpiritPanelStats>,
-    pub base_properties: Option<CombatHistorySpiritProperties>,
+    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,7 +56,7 @@ pub struct CombatHistoryResolvedSnapshot {
     pub round: u32,
     pub my_side: CombatHistoryResolvedParticipantSnapshot,
     pub rival_side: CombatHistoryResolvedParticipantSnapshot,
-    pub weather: Option<CombatHistoryResolvedWeatherSnapshot>,
+    pub weather: CombatHistoryWeatherSnapshot,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,27 +74,15 @@ pub struct CombatHistoryResolvedParticipantSnapshot {
 pub struct CombatHistoryResolvedSpiritSnapshot {
     pub spirit_id: u32,
     pub level: u8,
-    pub sex: u8,
+    pub sex: CombatHistorySpiritSex,
     pub current_hp: u16,
     pub max_hp: u16,
-    pub closeness: u8,
-    pub affiliation: u8,
     pub intimacy: CombatHistoryIntimacy,
     pub talent_type: u16,
     pub talent_level: u16,
     pub skin_id: u32,
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
-    pub extra_equipment_template_ids: Vec<u16>,
-    pub base_properties: Option<CombatHistorySpiritProperties>,
-    pub abnormal_state_ids: Vec<u32>,
-    pub spirit_state_bits: Option<u8>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryResolvedWeatherSnapshot {
-    pub effect: CombatHistoryWeatherEffect,
-    pub initial_rounds: Option<u8>,
-    pub remaining_rounds: Option<u8>,
+    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
+    pub abnormal_states: Vec<CombatHistorySpiritStatus>,
 }

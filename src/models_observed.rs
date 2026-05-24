@@ -6,7 +6,8 @@ use crate::{
     CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
     CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
     CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritPanelStats,
-    CombatHistorySpiritProperties, CombatHistorySpiritPropertyVar,
+    CombatHistorySpiritPropertyStages, CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
+    CombatHistorySpiritStatus, CombatHistoryWeatherSnapshot,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,20 +45,17 @@ pub struct CombatHistoryObservedParticipantState {
 pub struct CombatHistoryObservedSpiritState {
     pub spirit_id: u32,
     pub level: u8,
-    pub sex: u8,
+    pub sex: CombatHistorySpiritSex,
     pub current_hp: u16,
     pub max_hp: u16,
     pub skin_id: u32,
     pub talent_type: u16,
     pub talent_level: u16,
-    pub closeness: u8,
-    pub affiliation: u8,
     pub intimacy: CombatHistoryIntimacy,
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
-    pub extra_equipment_template_ids: Vec<u16>,
     pub panel_stats: Option<CombatHistorySpiritPanelStats>,
-    pub base_properties: Option<CombatHistorySpiritProperties>,
+    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -240,7 +238,7 @@ pub struct CombatHistoryAttackAffectEvent {
     pub is_pp: bool,
     pub pp_var: Vec<u8>,
     pub hp_var: CombatHistoryHpVar,
-    pub pro_vars: CombatHistorySpiritProperties,
+    pub pro_vars: CombatHistorySpiritPropertyStages,
     pub all_spirits_hp: Vec<u16>,
     pub restrain_type: i8,
     pub immunity_vars: Vec<CombatHistoryImmunityInfo>,
@@ -287,7 +285,7 @@ pub struct CombatHistoryBuffEvent {
     pub index: u8,
     pub buff_id: u8,
     pub hp_var: CombatHistoryHpVar,
-    pub pro_vars: CombatHistorySpiritProperties,
+    pub pro_vars: CombatHistorySpiritPropertyStages,
     pub is_remove: bool,
     pub other: Option<CombatHistoryBuffOtherEvent>,
 }
@@ -300,7 +298,7 @@ pub struct CombatHistoryBuffOtherEvent {
     pub other_index: u8,
     pub other_buff_id: u8,
     pub other_hp_var: CombatHistoryHpVar,
-    pub other_pro_vars: CombatHistorySpiritProperties,
+    pub other_pro_vars: CombatHistorySpiritPropertyStages,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -391,9 +389,8 @@ pub struct CombatHistoryObservedSpiritStateDelta {
     pub current_hp: Option<u16>,
     pub max_hp: Option<u16>,
     pub hp_var: Option<CombatHistoryHpVar>,
-    pub base_properties: Option<CombatHistorySpiritProperties>,
-    pub spirit_state_bits_by_slot: Option<[u8; 6]>,
-    pub abnormal_state_ids: Option<Vec<u8>>,
+    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
+    pub abnormal_states: Option<Vec<CombatHistorySpiritStatus>>,
     pub pp_updates: Vec<CombatHistorySkillPpDelta>,
 }
 
@@ -440,7 +437,7 @@ pub struct CombatHistoryObservedStateSnapshot {
     pub round: u32,
     pub my_side: CombatHistoryObservedParticipantSnapshot,
     pub rival_side: CombatHistoryObservedParticipantSnapshot,
-    pub weather: Option<CombatHistoryObservedWeatherSnapshot>,
+    pub weather: CombatHistoryWeatherSnapshot,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -458,27 +455,15 @@ pub struct CombatHistoryObservedParticipantSnapshot {
 pub struct CombatHistoryObservedSpiritSnapshot {
     pub spirit_id: u32,
     pub level: u8,
-    pub sex: u8,
+    pub sex: CombatHistorySpiritSex,
     pub current_hp: u16,
     pub max_hp: u16,
-    pub closeness: u8,
-    pub affiliation: u8,
     pub intimacy: CombatHistoryIntimacy,
     pub talent_type: u16,
     pub talent_level: u16,
     pub skin_id: u32,
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
-    pub extra_equipment_template_ids: Vec<u16>,
-    pub base_properties: Option<CombatHistorySpiritProperties>,
-    pub abnormal_state_ids: Vec<u32>,
-    pub spirit_state_bits: Option<u8>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryObservedWeatherSnapshot {
-    pub effect: CombatHistoryWeatherEffect,
-    pub initial_rounds: Option<u8>,
-    pub remaining_rounds: Option<u8>,
+    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
+    pub abnormal_states: Vec<CombatHistorySpiritStatus>,
 }

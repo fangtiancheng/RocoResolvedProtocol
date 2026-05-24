@@ -16,13 +16,36 @@ pub enum CombatHistorySideHint {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryParticipantType {
+    Player,
+    Other { raw: u8 },
+}
+
+impl CombatHistoryParticipantType {
+    pub fn from_raw(raw: u8) -> Self {
+        match raw {
+            0 => Self::Player,
+            value => Self::Other { raw: value },
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::Player => 0,
+            Self::Other { raw } => raw,
+        }
+    }
+}
+
 pub fn resolve_combat_history_side(
     id: u32,
-    participant_type: u8,
+    participant_type: CombatHistoryParticipantType,
     my_uin: u32,
-    my_participant_type: u8,
+    my_participant_type: CombatHistoryParticipantType,
     rival_uin: u32,
-    rival_participant_type: u8,
+    rival_participant_type: CombatHistoryParticipantType,
 ) -> CombatHistorySideHint {
     if id == my_uin {
         return CombatHistorySideHint::My;
@@ -30,12 +53,14 @@ pub fn resolve_combat_history_side(
     if id == rival_uin {
         return CombatHistorySideHint::Rival;
     }
-    if participant_type == 0 {
+    if participant_type == CombatHistoryParticipantType::Player {
         return CombatHistorySideHint::My;
     }
 
-    let matches_my_type = participant_type != 0 && participant_type == my_participant_type;
-    let matches_rival_type = participant_type != 0 && participant_type == rival_participant_type;
+    let matches_my_type = participant_type != CombatHistoryParticipantType::Player
+        && participant_type == my_participant_type;
+    let matches_rival_type = participant_type != CombatHistoryParticipantType::Player
+        && participant_type == rival_participant_type;
     match (matches_my_type, matches_rival_type) {
         (true, false) => CombatHistorySideHint::My,
         (false, true) => CombatHistorySideHint::Rival,
@@ -74,42 +99,90 @@ pub enum CombatHistoryFieldEffect {
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CombatHistoryIntimacyKind {
-    Progress,
-    Friendly,
-    Lingxi,
-    Affectionate,
-    NeverLeave,
-    Intimate,
-    UnknownFull,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryWeatherSnapshot {
+    None,
+    FieldEffect {
+        effect: CombatHistoryFieldEffect,
+        rounds_left: u8,
+    },
+    Raw {
+        raw_id: u8,
+        rounds_left: u8,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryIntimacy {
-    pub kind: CombatHistoryIntimacyKind,
-    pub closeness: u8,
-    pub affiliation: u8,
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryIntimacy {
+    Progress { closeness: u8 },
+    Close,
+    NeverLeave,
+    Inseparable,
+    Soulmate,
+    Friendly,
 }
 
 impl CombatHistoryIntimacy {
-    pub fn from_raw(closeness: u8, affiliation: u8) -> Self {
-        let kind = match affiliation {
-            0 => CombatHistoryIntimacyKind::Progress,
-            1 => CombatHistoryIntimacyKind::Friendly,
-            2 => CombatHistoryIntimacyKind::Lingxi,
-            3 => CombatHistoryIntimacyKind::Affectionate,
-            4 => CombatHistoryIntimacyKind::NeverLeave,
-            5 => CombatHistoryIntimacyKind::Intimate,
-            _ => CombatHistoryIntimacyKind::UnknownFull,
-        };
-        Self {
-            kind,
-            closeness,
-            affiliation,
+    pub fn from_raw(closeness: u8, affiliation: u8) -> Result<Self, String> {
+        if closeness > 100 {
+            return Err(format!(
+                "combat intimacy closeness out of range: {closeness}"
+            ));
         }
+        if affiliation != 0 && closeness != 100 {
+            return Err(format!(
+                "combat intimacy invalid full label: affiliation={affiliation}, closeness={closeness}"
+            ));
+        }
+        match affiliation {
+            0 => Ok(Self::Progress { closeness }),
+            1 => Ok(Self::Close),
+            2 => Ok(Self::NeverLeave),
+            3 => Ok(Self::Inseparable),
+            4 => Ok(Self::Soulmate),
+            5 => Ok(Self::Friendly),
+            _ => Err(format!(
+                "unknown combat intimacy affiliation: {affiliation}"
+            )),
+        }
+    }
+
+    pub fn closeness(self) -> u8 {
+        match self {
+            Self::Progress { closeness } => closeness,
+            _ => 100,
+        }
+    }
+}
+
+impl Default for CombatHistoryIntimacy {
+    fn default() -> Self {
+        Self::Progress { closeness: 0 }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritSex {
+    Male,
+    Female,
+}
+
+impl CombatHistorySpiritSex {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
+        match raw {
+            1 => Ok(Self::Male),
+            2 => Ok(Self::Female),
+            _ => Err(format!("unknown combat spirit sex: {raw}")),
+        }
+    }
+}
+
+impl Default for CombatHistorySpiritSex {
+    fn default() -> Self {
+        Self::Male
     }
 }
 
@@ -125,7 +198,7 @@ pub struct CombatHistoryReturnCode {
 pub struct CombatHistoryParticipantIdentity {
     pub side_hint: CombatHistorySideHint,
     pub uin: u32,
-    pub participant_type: u8,
+    pub participant_type: CombatHistoryParticipantType,
     pub nickname: String,
 }
 
@@ -163,7 +236,65 @@ pub struct CombatHistoryItem {
 pub struct CombatHistorySkillState {
     pub skill_id: u32,
     pub pp_left: u8,
+    pub pp_max: Option<u8>,
     pub inherited: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritStatus {
+    Sleep,
+    Paralysis,
+    Burn,
+    Frozen,
+    Poison,
+    Toxic,
+    Confusion,
+    Fear,
+    LeechSeed,
+    Curse,
+    Bewilder,
+    Nightmare,
+    Bind,
+}
+
+impl CombatHistorySpiritStatus {
+    pub fn from_raw_id(raw_id: u32) -> Result<Self, String> {
+        match raw_id {
+            1 => Ok(Self::Sleep),
+            2 => Ok(Self::Paralysis),
+            3 => Ok(Self::Burn),
+            4 => Ok(Self::Frozen),
+            5 => Ok(Self::Poison),
+            6 => Ok(Self::Toxic),
+            7 => Ok(Self::Confusion),
+            8 => Ok(Self::Fear),
+            9 => Ok(Self::LeechSeed),
+            10 => Ok(Self::Curse),
+            11 => Ok(Self::Bewilder),
+            12 => Ok(Self::Nightmare),
+            13 => Ok(Self::Bind),
+            _ => Err(format!("unknown combat spirit status id: {raw_id}")),
+        }
+    }
+
+    pub fn raw_id(self) -> u32 {
+        match self {
+            Self::Sleep => 1,
+            Self::Paralysis => 2,
+            Self::Burn => 3,
+            Self::Frozen => 4,
+            Self::Poison => 5,
+            Self::Toxic => 6,
+            Self::Confusion => 7,
+            Self::Fear => 8,
+            Self::LeechSeed => 9,
+            Self::Curse => 10,
+            Self::Bewilder => 11,
+            Self::Nightmare => 12,
+            Self::Bind => 13,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,7 +312,7 @@ pub struct CombatHistorySpiritEquipment {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistorySpiritProperties {
+pub struct CombatHistorySpiritPropertyStages {
     pub pa: i16,
     pub pd: i16,
     pub ma: i16,
