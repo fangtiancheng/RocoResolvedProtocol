@@ -188,11 +188,8 @@ pub struct CombatHistoryAttackEvent {
     pub actor_position: u8,
     pub target_id: u32,
     pub target_position: u8,
-    pub is_hurt: bool,
-    pub is_shaut: bool,
+    pub is_critical: bool,
     pub is_miss: bool,
-    pub restrain_hint: i8,
-    pub superform_type: u8,
     pub weather_change: Option<CombatHistoryWeatherChange>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
 }
@@ -222,17 +219,39 @@ pub enum CombatHistoryRoundAction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackAffectEvent {
-    pub id: u32,
+    pub target_id: u32,
     pub target_side: CombatHistorySideHint,
-    pub index: u8,
-    pub is_pp: bool,
-    pub pp_var: Vec<u8>,
+    pub target_position: u8,
+    pub skill_pp_left: [Option<u8>; 4],
     pub hp_var: CombatHistoryHpVar,
-    pub pro_vars: CombatHistorySpiritPropertyStages,
-    pub all_spirits_hp: Vec<u16>,
-    pub restrain_type: i8,
+    pub property_stages: CombatHistorySpiritPropertyStages,
+    pub side_hp: [Option<u16>; 6],
+    pub restrain_hint: CombatHistoryRestrainHint,
     pub immunities: Vec<CombatHistoryAbnormalState>,
     pub abnormal_state_changes: Vec<CombatHistoryAbnormalStateChange>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryRestrainHint {
+    None,
+    Resisted,
+    StronglyResisted,
+    Effective,
+    SuperEffective,
+}
+
+impl CombatHistoryRestrainHint {
+    pub fn from_raw(raw: i8) -> Result<Self, String> {
+        match raw {
+            0 => Ok(Self::None),
+            -2 => Ok(Self::Resisted),
+            -3 => Ok(Self::StronglyResisted),
+            2 => Ok(Self::Effective),
+            3 => Ok(Self::SuperEffective),
+            value => Err(format!("unknown combat restrain hint: {value}")),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
