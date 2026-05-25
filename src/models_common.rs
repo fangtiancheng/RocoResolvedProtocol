@@ -17,24 +17,25 @@ pub enum CombatHistorySideHint {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", tag = "kind")]
+#[serde(rename_all = "snake_case")]
 pub enum CombatHistoryParticipantType {
     Player,
-    Other { raw: u8 },
+    NonPlayer,
 }
 
 impl CombatHistoryParticipantType {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
         match raw {
-            0 => Self::Player,
-            value => Self::Other { raw: value },
+            0 => Ok(Self::Player),
+            3 => Ok(Self::NonPlayer),
+            value => Err(format!("unknown combat participant type: {value}")),
         }
     }
 
     pub fn raw(self) -> u8 {
         match self {
             Self::Player => 0,
-            Self::Other { raw } => raw,
+            Self::NonPlayer => 3,
         }
     }
 }
@@ -105,10 +106,6 @@ pub enum CombatHistoryWeatherSnapshot {
     None,
     FieldEffect {
         effect: CombatHistoryFieldEffect,
-        rounds_left: u8,
-    },
-    Raw {
-        raw_id: u8,
         rounds_left: u8,
     },
 }

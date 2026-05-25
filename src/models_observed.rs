@@ -192,14 +192,8 @@ pub struct CombatHistoryAttackEvent {
     pub is_shaut: bool,
     pub is_miss: bool,
     pub restrain_hint: i8,
-    pub raw_skill_type: u8,
     pub superform_type: u8,
     pub weather_change: Option<CombatHistoryWeatherChange>,
-    pub skill_bg_flag: u8,
-    pub my_use_pp: u8,
-    pub other_use_pp: u8,
-    pub my_sp_state: Vec<u8>,
-    pub other_sp_state: Vec<u8>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
 }
 
@@ -229,7 +223,7 @@ pub enum CombatHistoryRoundAction {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackAffectEvent {
     pub id: u32,
-    pub affect_type: u8,
+    pub target_side: CombatHistorySideHint,
     pub index: u8,
     pub is_pp: bool,
     pub pp_var: Vec<u8>,
@@ -238,31 +232,31 @@ pub struct CombatHistoryAttackAffectEvent {
     pub all_spirits_hp: Vec<u16>,
     pub restrain_type: i8,
     pub immunities: Vec<CombatHistoryAbnormalState>,
-    pub status_changes: Vec<CombatHistoryStatusChange>,
+    pub abnormal_state_changes: Vec<CombatHistoryAbnormalStateChange>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum CombatHistoryStatusChangeKind {
+pub enum CombatHistoryAbnormalStateChangeKind {
     Add,
     Remove,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryStatusChange {
+pub struct CombatHistoryAbnormalStateChange {
     pub abnormal_state: CombatHistoryAbnormalState,
     pub cause: u8,
-    pub kind: CombatHistoryStatusChangeKind,
+    pub kind: CombatHistoryAbnormalStateChangeKind,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryBuffEvent {
     pub id: u32,
-    pub affect_type: u8,
+    pub target_side: CombatHistorySideHint,
     pub index: u8,
-    pub buff_id: u8,
+    pub abnormal_state: CombatHistoryAbnormalState,
     pub hp_var: CombatHistoryHpVar,
     pub pro_vars: CombatHistorySpiritPropertyStages,
     pub is_remove: bool,
@@ -273,9 +267,9 @@ pub struct CombatHistoryBuffEvent {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryBuffOtherEvent {
     pub other_id: u32,
-    pub other_type: u8,
+    pub target_side: CombatHistorySideHint,
     pub other_index: u8,
-    pub other_buff_id: u8,
+    pub abnormal_state: CombatHistoryAbnormalState,
     pub other_hp_var: CombatHistoryHpVar,
     pub other_pro_vars: CombatHistorySpiritPropertyStages,
 }
@@ -288,7 +282,7 @@ pub struct CombatHistoryChangeSpiritEvent {
     pub change_kind: CombatHistoryChangeSpiritKind,
     pub old_position: u8,
     pub new_position: u8,
-    pub status_changes: Vec<CombatHistoryStatusChange>,
+    pub abnormal_state_changes: Vec<CombatHistoryAbnormalStateChange>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -361,17 +355,17 @@ pub struct CombatHistoryWeatherChange {
 pub enum CombatHistoryWeatherEffect {
     None,
     FieldEffect { effect: CombatHistoryFieldEffect },
-    Raw { raw_id: u8 },
 }
 
 impl CombatHistoryWeatherEffect {
-    pub fn from_raw(raw_weather: u8, normalized: Option<CombatHistoryFieldEffect>) -> Self {
+    pub fn from_raw(
+        raw_weather: u8,
+        normalized: Option<CombatHistoryFieldEffect>,
+    ) -> Result<Self, String> {
         match normalized {
-            Some(CombatHistoryFieldEffect::None) => Self::None,
-            Some(effect) => Self::FieldEffect { effect },
-            None => Self::Raw {
-                raw_id: raw_weather,
-            },
+            Some(CombatHistoryFieldEffect::None) => Ok(Self::None),
+            Some(effect) => Ok(Self::FieldEffect { effect }),
+            None => Err(format!("unknown combat weather effect: {raw_weather}")),
         }
     }
 }
