@@ -93,7 +93,6 @@ fn merge_spirit_state(
             skills[i] = Some(CombatHistorySkillState {
                 skill_id: skill.skill_id,
                 pp_left: skill.pp_left,
-                pp_max: skill.pp_max,
                 inherited: skill.inherited,
             });
         }
@@ -217,7 +216,6 @@ fn merge_spirit_snapshot(
             skills[i] = Some(CombatHistorySkillState {
                 skill_id: skill.skill_id,
                 pp_left: skill.pp_left,
-                pp_max: skill.pp_max,
                 inherited: skill.inherited,
             });
         }
@@ -268,10 +266,8 @@ mod tests {
             },
             frames: vec![CombatHistoryObservedFrame {
                 seq: 1,
-                round: Some(round),
+                round,
                 source: CombatHistoryFrameSource {
-                    cmd_id: None,
-                    ui_serial_num: None,
                     source_kind: CombatHistoryFrameSourceKind::LocalSynthetic,
                     packet_summary: None,
                 },

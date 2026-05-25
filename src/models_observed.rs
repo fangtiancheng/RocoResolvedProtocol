@@ -63,7 +63,7 @@ pub struct CombatHistoryObservedSpiritState {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryObservedFrame {
     pub seq: u64,
-    pub round: Option<u32>,
+    pub round: u32,
     pub source: CombatHistoryFrameSource,
     pub event: CombatHistoryObservedFrameEvent,
     pub state_snapshot: Option<CombatHistoryObservedStateSnapshot>,
@@ -72,8 +72,6 @@ pub struct CombatHistoryObservedFrame {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryFrameSource {
-    pub cmd_id: Option<u32>,
-    pub ui_serial_num: Option<u32>,
     pub source_kind: CombatHistoryFrameSourceKind,
     pub packet_summary: Option<CombatHistoryPacketSummaryRef>,
 }
@@ -89,6 +87,19 @@ pub enum CombatHistoryFrameSourceKind {
     MovieEnd,
     LocalSubmitAction,
     LocalSynthetic,
+}
+
+impl CombatHistoryFrameSourceKind {
+    pub fn cmd_id(self) -> Option<u32> {
+        match self {
+            Self::StartReply => Some(0xb0001),
+            Self::ActionAck => Some(0xb0003),
+            Self::FightResult => Some(0xb0004),
+            Self::ChangeSpiritNotify => Some(0xb0007),
+            Self::MovieEnd => Some(0xb0008),
+            Self::LoadedAck | Self::LocalSubmitAction | Self::LocalSynthetic => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,7 +140,7 @@ pub struct CombatHistoryActionAckEvent {
 pub struct CombatHistoryAcknowledgedAction {
     pub kind: CombatHistoryActionKind,
     pub actor_position: u8,
-    pub action_slot: Option<u8>,
+    pub skill_slot: Option<u8>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

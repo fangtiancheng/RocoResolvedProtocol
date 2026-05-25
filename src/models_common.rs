@@ -204,11 +204,11 @@ pub struct CombatHistoryGuardianPetStats {
 pub struct CombatHistoryParticipantDisplayState {
     pub shield_value: u16,
     pub recovery_effect_percent: u8,
-    pub locked_enhance_bits: u8,
+    pub locked_enhances: Vec<CombatHistoryLockedEnhance>,
     pub immune_negative_enhance: bool,
     pub extra_pp_cost: bool,
     pub immune_expel: bool,
-    pub immunity_ids: Vec<u32>,
+    pub immunities: Vec<CombatHistoryAbnormalState>,
     pub capture_ratio: Option<u32>,
 }
 
@@ -224,8 +224,49 @@ pub struct CombatHistoryItem {
 pub struct CombatHistorySkillState {
     pub skill_id: u32,
     pub pp_left: u8,
-    pub pp_max: Option<u8>,
     pub inherited: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryLockedEnhance {
+    PhysicalAttack,
+    PhysicalDefense,
+    MagicAttack,
+    MagicDefense,
+    Speed,
+    Accuracy,
+    Evasion,
+    Critical,
+}
+
+impl CombatHistoryLockedEnhance {
+    pub fn from_raw_bit(raw_bit: u8) -> Result<Self, String> {
+        match raw_bit {
+            0 => Ok(Self::PhysicalAttack),
+            1 => Ok(Self::PhysicalDefense),
+            2 => Ok(Self::MagicAttack),
+            3 => Ok(Self::MagicDefense),
+            4 => Ok(Self::Speed),
+            5 => Ok(Self::Accuracy),
+            6 => Ok(Self::Evasion),
+            7 => Ok(Self::Critical),
+            _ => Err(format!("unknown combat locked enhance bit: {raw_bit}")),
+        }
+    }
+
+    pub fn raw_bit(self) -> u8 {
+        match self {
+            Self::PhysicalAttack => 0,
+            Self::PhysicalDefense => 1,
+            Self::MagicAttack => 2,
+            Self::MagicDefense => 3,
+            Self::Speed => 4,
+            Self::Accuracy => 5,
+            Self::Evasion => 6,
+            Self::Critical => 7,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -252,7 +293,6 @@ pub enum CombatHistorySpiritFieldState {
     #[default]
     Normal,
     Fainted,
-    Unknown,
 }
 
 impl CombatHistorySpiritFieldState {
@@ -260,7 +300,6 @@ impl CombatHistorySpiritFieldState {
         match raw_bits {
             0 => Ok(Self::Normal),
             1 => Ok(Self::Fainted),
-            2 | 3 => Ok(Self::Unknown),
             _ => Err(format!(
                 "unknown combat spirit field state bits: {raw_bits}"
             )),
@@ -271,7 +310,6 @@ impl CombatHistorySpiritFieldState {
         match self {
             Self::Normal => 0,
             Self::Fainted => 1,
-            Self::Unknown => 2,
         }
     }
 }
@@ -320,12 +358,87 @@ impl CombatHistoryAbnormalState {
 pub struct CombatHistorySpiritEquipment {
     pub server_id: u32,
     pub item_id: u32,
-    pub equipment_type: u8,
+    pub equipment_type: CombatHistorySpiritEquipmentType,
     pub quality: u8,
-    pub base_attr: u8,
+    pub base_attr: CombatHistorySpiritEquipmentAttr,
     pub base_value: u8,
-    pub special_attr: u8,
+    pub special_attr: Option<CombatHistorySpiritEquipmentAttr>,
     pub special_value: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritEquipmentAttr {
+    PhysicalAttack,
+    PhysicalDefense,
+    MagicAttack,
+    MagicDefense,
+    Speed,
+    Energy,
+    Accuracy,
+    Evasion,
+    Critical,
+    CriticalResistance,
+}
+
+impl CombatHistorySpiritEquipmentAttr {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
+        match raw {
+            1 => Ok(Self::PhysicalAttack),
+            2 => Ok(Self::PhysicalDefense),
+            3 => Ok(Self::MagicAttack),
+            4 => Ok(Self::MagicDefense),
+            5 => Ok(Self::Speed),
+            6 => Ok(Self::Energy),
+            7 => Ok(Self::Accuracy),
+            8 => Ok(Self::Evasion),
+            9 => Ok(Self::Critical),
+            10 => Ok(Self::CriticalResistance),
+            _ => Err(format!("unknown combat spirit equipment attr: {raw}")),
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::PhysicalAttack => 1,
+            Self::PhysicalDefense => 2,
+            Self::MagicAttack => 3,
+            Self::MagicDefense => 4,
+            Self::Speed => 5,
+            Self::Energy => 6,
+            Self::Accuracy => 7,
+            Self::Evasion => 8,
+            Self::Critical => 9,
+            Self::CriticalResistance => 10,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritEquipmentType {
+    Weapon,
+    Armor,
+    Jewelry,
+}
+
+impl CombatHistorySpiritEquipmentType {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
+        match raw {
+            0 => Ok(Self::Weapon),
+            1 => Ok(Self::Armor),
+            2 => Ok(Self::Jewelry),
+            _ => Err(format!("unknown combat spirit equipment type: {raw}")),
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::Weapon => 0,
+            Self::Armor => 1,
+            Self::Jewelry => 2,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
