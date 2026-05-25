@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CombatHistoryGuardianPetStats, CombatHistoryIntimacy, CombatHistoryParticipantDisplayState,
-    CombatHistoryParticipantIdentity, CombatHistorySkillState, CombatHistorySpiritEquipment,
+    CombatHistoryAbnormalState, CombatHistoryGuardianPetStats, CombatHistoryIntimacy,
+    CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
+    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritFieldState,
     CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStages, CombatHistorySpiritSex,
-    CombatHistorySpiritStatus, CombatHistoryWeatherSnapshot,
+    CombatHistoryWeatherSnapshot,
 };
 
 /// Resolved history contains complete information from all participants
@@ -48,6 +49,7 @@ pub struct CombatHistoryResolvedSpiritState {
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
     pub panel_stats: Option<CombatHistorySpiritPanelStats>,
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
+    pub field_state: CombatHistorySpiritFieldState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,5 +86,6 @@ pub struct CombatHistoryResolvedSpiritSnapshot {
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
-    pub abnormal_states: Vec<CombatHistorySpiritStatus>,
+    pub field_state: CombatHistorySpiritFieldState,
+    pub abnormal_states: Vec<CombatHistoryAbnormalState>,
 }

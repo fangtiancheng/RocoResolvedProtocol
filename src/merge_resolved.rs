@@ -113,6 +113,7 @@ fn merge_spirit_state(
         equipments: complete.equipments.clone(),
         panel_stats: complete.panel_stats.clone(),
         property_stages: complete.property_stages.clone(),
+        field_state: complete.field_state,
     }
 }
 
@@ -235,6 +236,7 @@ fn merge_spirit_snapshot(
         skills,
         equipments: complete.equipments.clone(),
         property_stages: complete.property_stages.clone(),
+        field_state: complete.field_state,
         abnormal_states: complete.abnormal_states.clone(),
     }
 }
@@ -246,9 +248,8 @@ mod tests {
         CombatHistoryFrameSource, CombatHistoryFrameSourceKind, CombatHistoryObservedFrame,
         CombatHistoryObservedFrameEvent, CombatHistoryObservedInitialState,
         CombatHistoryObservedParticipantSnapshot, CombatHistoryObservedParticipantState,
-        CombatHistoryObservedStateDelta, CombatHistoryObservedStateSnapshot,
-        CombatHistoryParticipantIdentity, CombatHistoryPerspective, CombatHistorySideHint,
-        CombatHistoryWeatherSnapshot,
+        CombatHistoryObservedStateSnapshot, CombatHistoryParticipantIdentity,
+        CombatHistoryPerspective, CombatHistorySideHint, CombatHistoryWeatherSnapshot,
     };
 
     fn observed_with_snapshot(battle_id: &str, round: u32) -> CombatHistoryObserved {
@@ -275,9 +276,9 @@ mod tests {
                     packet_summary: None,
                 },
                 event: CombatHistoryObservedFrameEvent::Start,
-                state_delta: CombatHistoryObservedStateDelta::default(),
                 state_snapshot: Some(CombatHistoryObservedStateSnapshot {
                     round,
+                    action_availability: None,
                     my_side: snapshot_participant(&my_side),
                     rival_side: snapshot_participant(&rival_side),
                     weather: CombatHistoryWeatherSnapshot::None,

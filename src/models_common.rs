@@ -222,6 +222,7 @@ pub struct CombatHistoryParticipantDisplayState {
     pub extra_pp_cost: bool,
     pub immune_expel: bool,
     pub immunity_ids: Vec<u32>,
+    pub capture_ratio: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -242,7 +243,7 @@ pub struct CombatHistorySkillState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CombatHistorySpiritStatus {
+pub enum CombatHistoryAbnormalState {
     Sleep,
     Paralysis,
     Burn,
@@ -258,7 +259,37 @@ pub enum CombatHistorySpiritStatus {
     Bind,
 }
 
-impl CombatHistorySpiritStatus {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritFieldState {
+    #[default]
+    Normal,
+    Fainted,
+    Unknown,
+}
+
+impl CombatHistorySpiritFieldState {
+    pub fn from_raw_bits(raw_bits: u8) -> Result<Self, String> {
+        match raw_bits {
+            0 => Ok(Self::Normal),
+            1 => Ok(Self::Fainted),
+            2 | 3 => Ok(Self::Unknown),
+            _ => Err(format!(
+                "unknown combat spirit field state bits: {raw_bits}"
+            )),
+        }
+    }
+
+    pub fn raw_bits(self) -> u8 {
+        match self {
+            Self::Normal => 0,
+            Self::Fainted => 1,
+            Self::Unknown => 2,
+        }
+    }
+}
+
+impl CombatHistoryAbnormalState {
     pub fn from_raw_id(raw_id: u32) -> Result<Self, String> {
         match raw_id {
             1 => Ok(Self::Sleep),
@@ -274,7 +305,7 @@ impl CombatHistorySpiritStatus {
             11 => Ok(Self::Bewilder),
             12 => Ok(Self::Nightmare),
             13 => Ok(Self::Bind),
-            _ => Err(format!("unknown combat spirit status id: {raw_id}")),
+            _ => Err(format!("unknown combat abnormal state id: {raw_id}")),
         }
     }
 

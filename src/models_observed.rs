@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CombatHistoryFieldEffect, CombatHistoryGuardianPetStats, CombatHistoryHpVar,
-    CombatHistoryIntimacy, CombatHistoryItem, CombatHistoryNewSpiritInfo,
+    CombatHistoryAbnormalState, CombatHistoryFieldEffect, CombatHistoryGuardianPetStats,
+    CombatHistoryHpVar, CombatHistoryIntimacy, CombatHistoryItem, CombatHistoryNewSpiritInfo,
     CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
     CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
-    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritPanelStats,
-    CombatHistorySpiritPropertyStages, CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
-    CombatHistorySpiritStatus, CombatHistoryWeatherSnapshot,
+    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritFieldState,
+    CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStages,
+    CombatHistorySpiritPropertyVar, CombatHistorySpiritSex, CombatHistoryWeatherSnapshot,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +56,7 @@ pub struct CombatHistoryObservedSpiritState {
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
     pub panel_stats: Option<CombatHistorySpiritPanelStats>,
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
+    pub field_state: CombatHistorySpiritFieldState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,7 +66,6 @@ pub struct CombatHistoryObservedFrame {
     pub round: Option<u32>,
     pub source: CombatHistoryFrameSource,
     pub event: CombatHistoryObservedFrameEvent,
-    pub state_delta: CombatHistoryObservedStateDelta,
     pub state_snapshot: Option<CombatHistoryObservedStateSnapshot>,
 }
 
@@ -139,17 +139,16 @@ pub enum CombatHistoryActionKind {
     ChangeSpirit,
     UseItem,
     Escape,
-    Unknown(u8),
 }
 
 impl CombatHistoryActionKind {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
         match raw {
-            1 => Self::Skill,
-            2 => Self::ChangeSpirit,
-            3 => Self::UseItem,
-            4 => Self::Escape,
-            value => Self::Unknown(value),
+            1 => Ok(Self::Skill),
+            2 => Ok(Self::ChangeSpirit),
+            3 => Ok(Self::UseItem),
+            4 => Ok(Self::Escape),
+            value => Err(format!("unknown combat history action kind: {value}")),
         }
     }
 }
@@ -184,7 +183,6 @@ pub struct CombatHistoryResultInfo {
 pub struct CombatHistoryAttackEvent {
     #[serde(default = "default_unknown_side_hint")]
     pub actor_side: CombatHistorySideHint,
-    #[serde(default)]
     pub action: CombatHistoryRoundAction,
     pub actor_id: u32,
     pub actor_position: u8,
@@ -196,7 +194,7 @@ pub struct CombatHistoryAttackEvent {
     pub restrain_hint: i8,
     pub raw_skill_type: u8,
     pub superform_type: u8,
-    pub raw_weather: u8,
+    pub weather_change: Option<CombatHistoryWeatherChange>,
     pub skill_bg_flag: u8,
     pub my_use_pp: u8,
     pub other_use_pp: u8,
@@ -209,7 +207,7 @@ fn default_unknown_side_hint() -> CombatHistorySideHint {
     CombatHistorySideHint::Unknown
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryRoundAction {
     Skill {
@@ -221,12 +219,10 @@ pub enum CombatHistoryRoundAction {
         item_id: u32,
     },
     ChangeSpirit {
-        old_position: u8,
+        old_position: Option<u8>,
         new_position: u8,
     },
     Escape,
-    #[default]
-    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -241,25 +237,8 @@ pub struct CombatHistoryAttackAffectEvent {
     pub pro_vars: CombatHistorySpiritPropertyStages,
     pub all_spirits_hp: Vec<u16>,
     pub restrain_type: i8,
-    pub immunity_vars: Vec<CombatHistoryImmunityInfo>,
-    pub raw_buff_vars: Vec<CombatHistoryBuffInfo>,
+    pub immunities: Vec<CombatHistoryAbnormalState>,
     pub status_changes: Vec<CombatHistoryStatusChange>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryImmunityInfo {
-    pub immunity_type: u8,
-    pub definite_id: u8,
-    pub type_id: u16,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryBuffInfo {
-    pub id: u8,
-    pub buff_type: u8,
-    pub cause: u8,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -272,7 +251,7 @@ pub enum CombatHistoryStatusChangeKind {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryStatusChange {
-    pub status_id: u8,
+    pub abnormal_state: CombatHistoryAbnormalState,
     pub cause: u8,
     pub kind: CombatHistoryStatusChangeKind,
 }
@@ -309,7 +288,7 @@ pub struct CombatHistoryChangeSpiritEvent {
     pub change_kind: CombatHistoryChangeSpiritKind,
     pub old_position: u8,
     pub new_position: u8,
-    pub buffs: Vec<CombatHistoryBuffInfo>,
+    pub status_changes: Vec<CombatHistoryStatusChange>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -317,15 +296,14 @@ pub struct CombatHistoryChangeSpiritEvent {
 pub enum CombatHistoryChangeSpiritKind {
     Normal,
     Silent,
-    Unknown(u8),
 }
 
 impl CombatHistoryChangeSpiritKind {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
         match raw {
-            0 => Self::Normal,
-            1 => Self::Silent,
-            value => Self::Unknown(value),
+            0 => Ok(Self::Normal),
+            1 => Ok(Self::Silent),
+            value => Err(format!("unknown combat change spirit kind: {value}")),
         }
     }
 }
@@ -334,18 +312,6 @@ impl CombatHistoryChangeSpiritKind {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryMovieEndEvent {
     pub value: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryObservedStateDelta {
-    pub my_active_spirit_index: Option<u8>,
-    pub rival_active_spirit_index: Option<u8>,
-    pub my_action_availability: Option<CombatHistoryActionAvailability>,
-    pub spirit_updates: Vec<CombatHistoryObservedSpiritStateDelta>,
-    pub participant_display_updates: Vec<CombatHistoryObservedParticipantDisplayStateDelta>,
-    pub weather_update: Option<CombatHistoryObservedWeatherDelta>,
-    pub finish_reason_code: Option<u8>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
@@ -376,35 +342,14 @@ fn raw_can_combat_bit(raw_can_combat: u8, index: u8) -> bool {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryObservedParticipantDisplayStateDelta {
+pub struct CombatHistoryObservedParticipantDisplayStatePatch {
     pub owner: CombatHistorySideHint,
     pub display_state: CombatHistoryParticipantDisplayState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryObservedSpiritStateDelta {
-    pub owner: CombatHistorySideHint,
-    pub spirit_index: u8,
-    pub current_hp: Option<u16>,
-    pub max_hp: Option<u16>,
-    pub hp_var: Option<CombatHistoryHpVar>,
-    pub property_stages: Option<CombatHistorySpiritPropertyStages>,
-    pub abnormal_states: Option<Vec<CombatHistorySpiritStatus>>,
-    pub pp_updates: Vec<CombatHistorySkillPpDelta>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistorySkillPpDelta {
-    pub slot_index: u8,
-    pub skill_id: Option<u32>,
-    pub pp_left: u8,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CombatHistoryObservedWeatherDelta {
+pub struct CombatHistoryWeatherChange {
     pub effect: CombatHistoryWeatherEffect,
     pub initial_rounds: Option<u8>,
     pub remaining_rounds: Option<u8>,
@@ -435,6 +380,7 @@ impl CombatHistoryWeatherEffect {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryObservedStateSnapshot {
     pub round: u32,
+    pub action_availability: Option<CombatHistoryActionAvailability>,
     pub my_side: CombatHistoryObservedParticipantSnapshot,
     pub rival_side: CombatHistoryObservedParticipantSnapshot,
     pub weather: CombatHistoryWeatherSnapshot,
@@ -465,5 +411,6 @@ pub struct CombatHistoryObservedSpiritSnapshot {
     pub skills: [Option<CombatHistorySkillState>; 4],
     pub equipments: [Option<CombatHistorySpiritEquipment>; 3],
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
-    pub abnormal_states: Vec<CombatHistorySpiritStatus>,
+    pub field_state: CombatHistorySpiritFieldState,
+    pub abnormal_states: Vec<CombatHistoryAbnormalState>,
 }
