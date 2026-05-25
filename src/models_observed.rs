@@ -7,7 +7,7 @@ use crate::{
     CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
     CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritFieldState,
     CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStages,
-    CombatHistorySpiritPropertyVar, CombatHistorySpiritSex, CombatHistoryWeatherSnapshot,
+    CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,7 +190,7 @@ pub struct CombatHistoryAttackEvent {
     pub target_position: u8,
     pub is_critical: bool,
     pub is_miss: bool,
-    pub weather_change: Option<CombatHistoryWeatherChange>,
+    pub weather_change: Option<CombatHistoryFieldEffect>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
 }
 
@@ -362,41 +362,12 @@ pub struct CombatHistoryObservedParticipantDisplayStatePatch {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryWeatherChange {
-    pub effect: CombatHistoryWeatherEffect,
-    pub initial_rounds: Option<u8>,
-    pub remaining_rounds: Option<u8>,
-    pub effective_round: Option<u32>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case", tag = "kind")]
-pub enum CombatHistoryWeatherEffect {
-    None,
-    FieldEffect { effect: CombatHistoryFieldEffect },
-}
-
-impl CombatHistoryWeatherEffect {
-    pub fn from_raw(
-        raw_weather: u8,
-        normalized: Option<CombatHistoryFieldEffect>,
-    ) -> Result<Self, String> {
-        match normalized {
-            Some(CombatHistoryFieldEffect::None) => Ok(Self::None),
-            Some(effect) => Ok(Self::FieldEffect { effect }),
-            None => Err(format!("unknown combat weather effect: {raw_weather}")),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CombatHistoryObservedStateSnapshot {
     pub round: u32,
     pub action_availability: Option<CombatHistoryActionAvailability>,
     pub my_side: CombatHistoryObservedParticipantSnapshot,
     pub rival_side: CombatHistoryObservedParticipantSnapshot,
-    pub weather: CombatHistoryWeatherSnapshot,
+    pub weather: CombatHistoryFieldEffect,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

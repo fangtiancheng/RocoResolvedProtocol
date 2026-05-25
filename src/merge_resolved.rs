@@ -1,12 +1,12 @@
 use crate::{
-    CombatHistoryObserved, CombatHistoryObservedFrame, CombatHistoryObservedInitialState,
-    CombatHistoryObservedParticipantSnapshot, CombatHistoryObservedParticipantState,
-    CombatHistoryObservedSpiritSnapshot, CombatHistoryObservedSpiritState,
-    CombatHistoryObservedStateSnapshot, CombatHistoryParticipantDisplayState,
-    CombatHistoryResolved, CombatHistoryResolvedInitialState,
+    CombatHistoryFieldEffect, CombatHistoryObserved, CombatHistoryObservedFrame,
+    CombatHistoryObservedInitialState, CombatHistoryObservedParticipantSnapshot,
+    CombatHistoryObservedParticipantState, CombatHistoryObservedSpiritSnapshot,
+    CombatHistoryObservedSpiritState, CombatHistoryObservedStateSnapshot,
+    CombatHistoryParticipantDisplayState, CombatHistoryResolved, CombatHistoryResolvedInitialState,
     CombatHistoryResolvedParticipantSnapshot, CombatHistoryResolvedParticipantState,
     CombatHistoryResolvedSnapshot, CombatHistoryResolvedSpiritSnapshot,
-    CombatHistoryResolvedSpiritState, CombatHistorySkillState, CombatHistoryWeatherSnapshot,
+    CombatHistoryResolvedSpiritState, CombatHistorySkillState,
 };
 
 /// Merge two observed histories (from both participants) into a resolved history
@@ -173,7 +173,7 @@ fn merge_snapshot_pair(
 
     // Use weather from either side (should be the same)
     let weather = match my_snapshot.weather {
-        CombatHistoryWeatherSnapshot::None => rival_snapshot.weather,
+        CombatHistoryFieldEffect::None => rival_snapshot.weather,
         value => value,
     };
 
@@ -249,7 +249,7 @@ mod tests {
         CombatHistoryObservedFrameEvent, CombatHistoryObservedInitialState,
         CombatHistoryObservedParticipantSnapshot, CombatHistoryObservedParticipantState,
         CombatHistoryObservedStateSnapshot, CombatHistoryParticipantIdentity,
-        CombatHistoryPerspective, CombatHistorySideHint, CombatHistoryWeatherSnapshot,
+        CombatHistoryPerspective, CombatHistorySideHint,
     };
 
     fn observed_with_snapshot(battle_id: &str, round: u32) -> CombatHistoryObserved {
@@ -281,7 +281,7 @@ mod tests {
                     action_availability: None,
                     my_side: snapshot_participant(&my_side),
                     rival_side: snapshot_participant(&rival_side),
-                    weather: CombatHistoryWeatherSnapshot::None,
+                    weather: CombatHistoryFieldEffect::None,
                 }),
             }],
             finish_reason_code: None,

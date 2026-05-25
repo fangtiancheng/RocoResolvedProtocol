@@ -70,44 +70,34 @@ pub fn resolve_combat_history_side(
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CombatHistoryFieldEffect {
-    ScorchingSun,
-    Rain,
-    Hail,
-    Thunderstorm,
-    DarkCastle,
-    Gale,
-    Dreamland,
-    Miasma,
-    FertileSoil,
-    DragonFormation,
-    MartialRealm,
-    HolyLight,
-    BloodMoon,
-    Labyrinth,
-    IronWall,
-    Fragrance,
-    Fog,
-    Meteor,
-    Mirage,
-    Nebula,
-    Locked,
-    Dawn,
-    WindForestFireMountain,
-    Paradise,
-    Unknown25,
-    None,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case", tag = "kind")]
-pub enum CombatHistoryWeatherSnapshot {
+pub enum CombatHistoryFieldEffect {
     None,
-    FieldEffect {
-        effect: CombatHistoryFieldEffect,
-        rounds_left: u8,
-    },
+    ScorchingSun { rounds_left: u8 },
+    Rain { rounds_left: u8 },
+    Hail { rounds_left: u8 },
+    Thunderstorm { rounds_left: u8 },
+    DarkCastle { rounds_left: u8 },
+    Gale { rounds_left: u8 },
+    Dreamland { rounds_left: u8 },
+    Miasma { rounds_left: u8 },
+    FertileSoil { rounds_left: u8 },
+    DragonFormation { rounds_left: u8 },
+    MartialRealm { rounds_left: u8 },
+    HolyLight { rounds_left: u8 },
+    BloodMoon { rounds_left: u8 },
+    Labyrinth { rounds_left: u8 },
+    IronWall { rounds_left: u8 },
+    Fragrance { rounds_left: u8 },
+    Fog { rounds_left: u8 },
+    Meteor { rounds_left: u8 },
+    Mirage { rounds_left: u8 },
+    Nebula { rounds_left: u8 },
+    Locked { rounds_left: u8 },
+    Dawn { rounds_left: u8 },
+    WindForestFireMountain { rounds_left: u8 },
+    Paradise { rounds_left: u8 },
+    Unknown25 { rounds_left: u8 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
