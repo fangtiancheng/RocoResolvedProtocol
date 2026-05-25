@@ -313,14 +313,14 @@ pub struct CombatHistorySpiritEquipment {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistorySpiritPropertyStages {
-    pub pa: i16,
-    pub pd: i16,
-    pub ma: i16,
-    pub md: i16,
-    pub ve: i16,
-    pub sp: i16,
-    pub dp: i16,
-    pub crit: i16,
+    pub pa: i8,
+    pub pd: i8,
+    pub ma: i8,
+    pub md: i8,
+    pub ve: i8,
+    pub sp: i8,
+    pub dp: i8,
+    pub crit: i8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
