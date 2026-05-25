@@ -177,22 +177,48 @@ pub struct CombatHistoryRoundResultEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryResultInfo {
-    pub finish_reason_code: Option<u8>,
+    pub finish_reason: Option<CombatHistoryFinishReason>,
     pub action_availability: CombatHistoryActionAvailability,
-    pub spirit_props_var: Vec<CombatHistorySpiritPropertyVar>,
+    pub spirit_property_changes: Vec<CombatHistorySpiritPropertyVar>,
     pub obtain_items: Vec<CombatHistoryItem>,
     pub spirit_infos: Vec<CombatHistoryNewSpiritInfo>,
     pub trainer_exp: u32,
     pub honour_point: u32,
     pub next_level_trainer_exp: u32,
-    pub meet_condition: u8,
     pub exp_add_bits: u8,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryFinishReason {
+    Lose,
+    Win,
+    RunAway,
+}
+
+impl CombatHistoryFinishReason {
+    pub fn from_raw(raw: u8) -> Result<Option<Self>, String> {
+        match raw {
+            0 => Ok(None),
+            1 => Ok(Some(Self::Lose)),
+            2 => Ok(Some(Self::Win)),
+            3 => Ok(Some(Self::RunAway)),
+            value => Err(format!("unknown combat finish reason: {value}")),
+        }
+    }
+
+    pub fn raw_code(self) -> u8 {
+        match self {
+            Self::Lose => 1,
+            Self::Win => 2,
+            Self::RunAway => 3,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackEvent {
-    #[serde(default = "default_unknown_side_hint")]
     pub actor_side: CombatHistorySideHint,
     pub action: CombatHistoryRoundAction,
     pub actor_id: u32,
@@ -203,10 +229,6 @@ pub struct CombatHistoryAttackEvent {
     pub is_miss: bool,
     pub weather_change: Option<CombatHistoryFieldEffect>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
-}
-
-fn default_unknown_side_hint() -> CombatHistorySideHint {
-    CombatHistorySideHint::Unknown
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
