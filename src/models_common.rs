@@ -20,14 +20,24 @@ pub enum CombatHistorySideHint {
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistoryParticipantType {
     Player,
+    Object,
+    Boss,
     NonPlayer,
+    NonPlayer9,
+    NonPlayer17,
+    NonPlayer21,
 }
 
 impl CombatHistoryParticipantType {
     pub fn from_raw(raw: u8) -> Result<Self, String> {
         match raw {
             0 => Ok(Self::Player),
+            1 => Ok(Self::Object),
+            2 => Ok(Self::Boss),
             3 => Ok(Self::NonPlayer),
+            9 => Ok(Self::NonPlayer9),
+            17 => Ok(Self::NonPlayer17),
+            21 => Ok(Self::NonPlayer21),
             value => Err(format!("unknown combat participant type: {value}")),
         }
     }
@@ -35,8 +45,17 @@ impl CombatHistoryParticipantType {
     pub fn raw(self) -> u8 {
         match self {
             Self::Player => 0,
+            Self::Object => 1,
+            Self::Boss => 2,
             Self::NonPlayer => 3,
+            Self::NonPlayer9 => 9,
+            Self::NonPlayer17 => 17,
+            Self::NonPlayer21 => 21,
         }
+    }
+
+    pub fn is_player(self) -> bool {
+        self == Self::Player
     }
 }
 
@@ -54,14 +73,13 @@ pub fn resolve_combat_history_side(
     if id == rival_uin {
         return CombatHistorySideHint::Rival;
     }
-    if participant_type == CombatHistoryParticipantType::Player {
+    if participant_type.is_player() {
         return CombatHistorySideHint::My;
     }
 
-    let matches_my_type = participant_type != CombatHistoryParticipantType::Player
-        && participant_type == my_participant_type;
-    let matches_rival_type = participant_type != CombatHistoryParticipantType::Player
-        && participant_type == rival_participant_type;
+    let matches_my_type = !participant_type.is_player() && participant_type == my_participant_type;
+    let matches_rival_type =
+        !participant_type.is_player() && participant_type == rival_participant_type;
     match (matches_my_type, matches_rival_type) {
         (true, false) => CombatHistorySideHint::My,
         (false, true) => CombatHistorySideHint::Rival,
@@ -291,15 +309,19 @@ pub enum CombatHistoryAbnormalState {
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistorySpiritFieldState {
     #[default]
-    Normal,
+    Empty,
+    Hidden,
     Fainted,
+    Ready,
 }
 
 impl CombatHistorySpiritFieldState {
     pub fn from_raw_bits(raw_bits: u8) -> Result<Self, String> {
         match raw_bits {
-            0 => Ok(Self::Normal),
-            1 => Ok(Self::Fainted),
+            0 => Ok(Self::Empty),
+            1 => Ok(Self::Hidden),
+            2 => Ok(Self::Fainted),
+            3 => Ok(Self::Ready),
             _ => Err(format!(
                 "unknown combat spirit field state bits: {raw_bits}"
             )),
@@ -308,8 +330,10 @@ impl CombatHistorySpiritFieldState {
 
     pub fn raw_bits(self) -> u8 {
         match self {
-            Self::Normal => 0,
-            Self::Fainted => 1,
+            Self::Empty => 0,
+            Self::Hidden => 1,
+            Self::Fainted => 2,
+            Self::Ready => 3,
         }
     }
 }
@@ -510,4 +534,50 @@ pub struct CombatHistorySpiritPanelStats {
     pub ma: u16,
     pub md: u16,
     pub sp: u16,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn participant_type_accepts_observed_boss_and_object_values() {
+        let cases = [
+            (0, CombatHistoryParticipantType::Player),
+            (1, CombatHistoryParticipantType::Object),
+            (2, CombatHistoryParticipantType::Boss),
+            (3, CombatHistoryParticipantType::NonPlayer),
+            (9, CombatHistoryParticipantType::NonPlayer9),
+            (17, CombatHistoryParticipantType::NonPlayer17),
+            (21, CombatHistoryParticipantType::NonPlayer21),
+        ];
+
+        for (raw, participant_type) in cases {
+            assert_eq!(
+                CombatHistoryParticipantType::from_raw(raw),
+                Ok(participant_type)
+            );
+            assert_eq!(participant_type.raw(), raw);
+        }
+        assert!(CombatHistoryParticipantType::from_raw(22).is_err());
+    }
+
+    #[test]
+    fn spirit_field_state_accepts_client_display_states() {
+        let cases = [
+            (0, CombatHistorySpiritFieldState::Empty),
+            (1, CombatHistorySpiritFieldState::Hidden),
+            (2, CombatHistorySpiritFieldState::Fainted),
+            (3, CombatHistorySpiritFieldState::Ready),
+        ];
+
+        for (raw, field_state) in cases {
+            assert_eq!(
+                CombatHistorySpiritFieldState::from_raw_bits(raw),
+                Ok(field_state)
+            );
+            assert_eq!(field_state.raw_bits(), raw);
+        }
+        assert!(CombatHistorySpiritFieldState::from_raw_bits(4).is_err());
+    }
 }

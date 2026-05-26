@@ -342,6 +342,8 @@ pub struct CombatHistoryChangeSpiritEvent {
 pub enum CombatHistoryChangeSpiritKind {
     Normal,
     Silent,
+    Forced,
+    ForcedSilent,
 }
 
 impl CombatHistoryChangeSpiritKind {
@@ -349,7 +351,18 @@ impl CombatHistoryChangeSpiritKind {
         match raw {
             0 => Ok(Self::Normal),
             1 => Ok(Self::Silent),
+            2 => Ok(Self::Forced),
+            3 => Ok(Self::ForcedSilent),
             value => Err(format!("unknown combat change spirit kind: {value}")),
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::Normal => 0,
+            Self::Silent => 1,
+            Self::Forced => 2,
+            Self::ForcedSilent => 3,
         }
     }
 }
@@ -430,4 +443,25 @@ pub struct CombatHistoryObservedSpiritSnapshot {
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
     pub field_state: CombatHistorySpiritFieldState,
     pub abnormal_states: Vec<CombatHistoryAbnormalState>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn change_spirit_kind_accepts_observed_values() {
+        let cases = [
+            (0, CombatHistoryChangeSpiritKind::Normal),
+            (1, CombatHistoryChangeSpiritKind::Silent),
+            (2, CombatHistoryChangeSpiritKind::Forced),
+            (3, CombatHistoryChangeSpiritKind::ForcedSilent),
+        ];
+
+        for (raw, kind) in cases {
+            assert_eq!(CombatHistoryChangeSpiritKind::from_raw(raw), Ok(kind));
+            assert_eq!(kind.raw(), raw);
+        }
+        assert!(CombatHistoryChangeSpiritKind::from_raw(4).is_err());
+    }
 }
