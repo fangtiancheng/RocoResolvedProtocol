@@ -478,6 +478,19 @@ pub struct CombatHistorySpiritPropertyStages {
     pub crit: i8,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritPropertyStage {
+    PhysicalAttack,
+    PhysicalDefense,
+    MagicAttack,
+    MagicDefense,
+    Speed,
+    Accuracy,
+    Evasion,
+    Critical,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryHpVar {

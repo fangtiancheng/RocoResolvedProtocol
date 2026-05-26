@@ -6,8 +6,8 @@ use crate::{
     CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
     CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
     CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritFieldState,
-    CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStages,
-    CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
+    CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStage,
+    CombatHistorySpiritPropertyStages, CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -260,8 +260,73 @@ pub struct CombatHistoryAttackAffectEvent {
     pub property_stages: CombatHistorySpiritPropertyStages,
     pub side_hp: [Option<u16>; 6],
     pub restrain_hint: CombatHistoryRestrainHint,
-    pub immunities: Vec<CombatHistoryAbnormalState>,
+    pub immunities: Vec<CombatHistoryImmunity>,
     pub abnormal_state_changes: Vec<CombatHistoryAbnormalStateChange>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryImmunity {
+    InflictAbnormalState {
+        abnormal_state: CombatHistoryAbnormalState,
+    },
+    RemoveAbnormalState {
+        abnormal_state: CombatHistoryAbnormalState,
+    },
+    EnhanceProperty {
+        property: CombatHistorySpiritPropertyStage,
+    },
+    WeakenProperty {
+        property: CombatHistorySpiritPropertyStage,
+    },
+    EnhanceAnyProperty,
+    WeakenAnyProperty,
+    Unknown {
+        effect_id: u32,
+    },
+}
+
+impl CombatHistoryImmunity {
+    pub fn from_effect_id(effect_id: u32) -> Result<Self, String> {
+        Ok(match effect_id {
+            10001..=10013 => CombatHistoryAbnormalState::from_raw_id(effect_id - 10000)
+                .map(|abnormal_state| Self::InflictAbnormalState { abnormal_state })?,
+            20001..=20013 => CombatHistoryAbnormalState::from_raw_id(effect_id - 20000)
+                .map(|abnormal_state| Self::RemoveAbnormalState { abnormal_state })?,
+            30001..=30007 => Self::EnhanceProperty {
+                property: property_stage_from_effect_offset(effect_id - 30000)?,
+            },
+            40001..=40007 => Self::WeakenProperty {
+                property: property_stage_from_effect_offset(effect_id - 40000)?,
+            },
+            50001 => Self::EnhanceAnyProperty,
+            60001 => Self::WeakenAnyProperty,
+            _ => Self::Unknown { effect_id },
+        })
+    }
+
+    pub fn from_raw_type_id(type_id: u16) -> Result<Self, String> {
+        Self::from_effect_id(10000 + u32::from(type_id))
+    }
+}
+
+fn property_stage_from_effect_offset(
+    offset: u32,
+) -> Result<CombatHistorySpiritPropertyStage, String> {
+    Ok(match offset {
+        1 => CombatHistorySpiritPropertyStage::MagicDefense,
+        2 => CombatHistorySpiritPropertyStage::PhysicalAttack,
+        3 => CombatHistorySpiritPropertyStage::Accuracy,
+        4 => CombatHistorySpiritPropertyStage::MagicAttack,
+        5 => CombatHistorySpiritPropertyStage::Evasion,
+        6 => CombatHistorySpiritPropertyStage::Speed,
+        7 => CombatHistorySpiritPropertyStage::PhysicalDefense,
+        value => {
+            return Err(format!(
+                "unknown combat immunity property effect offset: {value}"
+            ))
+        }
+    })
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -463,5 +528,19 @@ mod tests {
             assert_eq!(kind.raw(), raw);
         }
         assert!(CombatHistoryChangeSpiritKind::from_raw(4).is_err());
+    }
+
+    #[test]
+    fn immunity_raw_type_id_maps_to_skill_effect_semantics() {
+        assert_eq!(
+            CombatHistoryImmunity::from_raw_type_id(6),
+            Ok(CombatHistoryImmunity::InflictAbnormalState {
+                abnormal_state: CombatHistoryAbnormalState::Toxic,
+            })
+        );
+        assert_eq!(
+            CombatHistoryImmunity::from_raw_type_id(50000),
+            Ok(CombatHistoryImmunity::Unknown { effect_id: 60000 })
+        );
     }
 }
