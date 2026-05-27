@@ -247,6 +247,11 @@ pub enum CombatHistoryRoundAction {
         new_position: u8,
     },
     Escape,
+    ServerUnhandled {
+        actor_position: u8,
+        raw_skill_type: u8,
+        action_value: u32,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
