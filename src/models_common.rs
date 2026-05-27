@@ -118,6 +118,74 @@ pub enum CombatHistoryFieldEffect {
     Unknown25 { rounds_left: u8 },
 }
 
+impl CombatHistoryFieldEffect {
+    pub fn raw_id(self) -> u8 {
+        match self {
+            Self::ScorchingSun { .. } => 1,
+            Self::Rain { .. } => 2,
+            Self::Hail { .. } => 3,
+            Self::Thunderstorm { .. } => 4,
+            Self::DarkCastle { .. } => 5,
+            Self::Gale { .. } => 6,
+            Self::Dreamland { .. } => 7,
+            Self::Miasma { .. } => 8,
+            Self::FertileSoil { .. } => 9,
+            Self::DragonFormation { .. } => 10,
+            Self::MartialRealm { .. } => 11,
+            Self::HolyLight { .. } => 12,
+            Self::BloodMoon { .. } => 13,
+            Self::Labyrinth { .. } => 14,
+            Self::IronWall { .. } => 15,
+            Self::Fragrance { .. } => 16,
+            Self::Fog { .. } => 17,
+            Self::Meteor { .. } => 18,
+            Self::Mirage { .. } => 19,
+            Self::Nebula { .. } => 20,
+            Self::Locked { .. } => 21,
+            Self::Dawn { .. } => 22,
+            Self::WindForestFireMountain { .. } => 23,
+            Self::Paradise { .. } => 24,
+            Self::Unknown25 { .. } => 25,
+            Self::None => 100,
+        }
+    }
+
+    pub fn rounds_left(self) -> u8 {
+        match self {
+            Self::None => 0,
+            Self::ScorchingSun { rounds_left }
+            | Self::Rain { rounds_left }
+            | Self::Hail { rounds_left }
+            | Self::Thunderstorm { rounds_left }
+            | Self::DarkCastle { rounds_left }
+            | Self::Gale { rounds_left }
+            | Self::Dreamland { rounds_left }
+            | Self::Miasma { rounds_left }
+            | Self::FertileSoil { rounds_left }
+            | Self::DragonFormation { rounds_left }
+            | Self::MartialRealm { rounds_left }
+            | Self::HolyLight { rounds_left }
+            | Self::BloodMoon { rounds_left }
+            | Self::Labyrinth { rounds_left }
+            | Self::IronWall { rounds_left }
+            | Self::Fragrance { rounds_left }
+            | Self::Fog { rounds_left }
+            | Self::Meteor { rounds_left }
+            | Self::Mirage { rounds_left }
+            | Self::Nebula { rounds_left }
+            | Self::Locked { rounds_left }
+            | Self::Dawn { rounds_left }
+            | Self::WindForestFireMountain { rounds_left }
+            | Self::Paradise { rounds_left }
+            | Self::Unknown25 { rounds_left } => rounds_left,
+        }
+    }
+
+    pub fn is_none(self) -> bool {
+        matches!(self, Self::None)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryIntimacy {
@@ -223,11 +291,47 @@ pub struct CombatHistoryParticipantDisplayState {
     pub shield_value: u16,
     pub recovery_effect_percent: u8,
     pub locked_enhances: Vec<CombatHistoryLockedEnhance>,
-    pub immune_negative_enhance: bool,
-    pub extra_pp_cost: bool,
-    pub immune_expel: bool,
-    pub immunities: Vec<CombatHistoryAbnormalState>,
+    pub field_statuses: Vec<CombatHistorySpiritFieldStatus>,
     pub capture_ratio: Option<u32>,
+}
+
+impl CombatHistoryParticipantDisplayState {
+    pub fn merge_patch(
+        base: Option<Self>,
+        patch: CombatHistoryParticipantDisplayState,
+    ) -> CombatHistoryParticipantDisplayState {
+        if patch.is_capture_ratio_patch() {
+            let mut merged = base.unwrap_or_default();
+            merged.capture_ratio = patch.capture_ratio;
+            return merged;
+        }
+
+        let previous_capture_ratio = base.and_then(|state| state.capture_ratio);
+        let mut merged = patch;
+        if merged.capture_ratio.is_none() {
+            merged.capture_ratio = previous_capture_ratio;
+        }
+        merged
+    }
+
+    pub fn is_capture_ratio_patch(&self) -> bool {
+        self.capture_ratio.is_some()
+            && self.shield_value == 0
+            && self.recovery_effect_percent == 0
+            && self.locked_enhances.is_empty()
+            && self.field_statuses.is_empty()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistorySpiritFieldStatus {
+    AbnormalImmunity {
+        abnormal_state: CombatHistoryAbnormalState,
+    },
+    NegativeEnhanceImmunity,
+    PpDoubleCost,
+    ExpelImmunity,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -476,6 +580,38 @@ pub struct CombatHistorySpiritPropertyStages {
     pub sp: i8,
     pub dp: i8,
     pub crit: i8,
+}
+
+impl Default for CombatHistorySpiritPropertyStages {
+    fn default() -> Self {
+        Self {
+            pa: 0,
+            pd: 0,
+            ma: 0,
+            md: 0,
+            ve: 0,
+            sp: 0,
+            dp: 0,
+            crit: 0,
+        }
+    }
+}
+
+impl CombatHistorySpiritPropertyStages {
+    pub fn merge_delta(&mut self, delta: &Self) {
+        self.pa = merge_bounded_property_stage(self.pa, delta.pa, -6, 6);
+        self.pd = merge_bounded_property_stage(self.pd, delta.pd, -6, 6);
+        self.ma = merge_bounded_property_stage(self.ma, delta.ma, -6, 6);
+        self.md = merge_bounded_property_stage(self.md, delta.md, -6, 6);
+        self.ve = merge_bounded_property_stage(self.ve, delta.ve, -6, 6);
+        self.sp = merge_bounded_property_stage(self.sp, delta.sp, -6, 6);
+        self.dp = merge_bounded_property_stage(self.dp, delta.dp, -6, 6);
+        self.crit = merge_bounded_property_stage(self.crit, delta.crit, -2, 2);
+    }
+}
+
+fn merge_bounded_property_stage(current: i8, delta: i8, min: i8, max: i8) -> i8 {
+    current.saturating_add(delta).clamp(min, max)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
