@@ -606,7 +606,6 @@ impl CombatHistorySpiritPropertyStages {
         self.ve = merge_bounded_property_stage(self.ve, delta.ve, -6, 6);
         self.sp = merge_bounded_property_stage(self.sp, delta.sp, -6, 6);
         self.dp = merge_bounded_property_stage(self.dp, delta.dp, -6, 6);
-        self.crit = merge_bounded_property_stage(self.crit, delta.crit, -2, 2);
     }
 }
 
