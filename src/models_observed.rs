@@ -224,11 +224,26 @@ pub struct CombatHistoryAttackEvent {
     pub actor_id: u32,
     pub actor_position: u8,
     pub target_id: u32,
+    pub target_side: CombatHistorySideHint,
     pub target_position: u8,
     pub is_critical: bool,
     pub is_miss: bool,
+    pub form_change: Option<CombatHistoryFormChange>,
     pub weather_change: Option<CombatHistoryFieldEffect>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryFormChange {
+    Awaken {
+        trigger_skill_id: u32,
+        continues_attack: bool,
+    },
+    RestoreNormal {
+        trigger_skill_id: u32,
+        continues_attack: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

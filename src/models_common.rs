@@ -8,7 +8,7 @@ pub enum CombatHistoryPerspective {
     Spectator,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistorySideHint {
     My,
@@ -16,7 +16,7 @@ pub enum CombatHistorySideHint {
     Unknown,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistoryParticipantType {
     Player,
@@ -85,6 +85,75 @@ pub fn resolve_combat_history_side(
         (false, true) => CombatHistorySideHint::Rival,
         _ => CombatHistorySideHint::Unknown,
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistorySideParticipants {
+    pub my_uin: u32,
+    pub my_type: CombatHistoryParticipantType,
+    pub rival_uin: u32,
+    pub rival_type: CombatHistoryParticipantType,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistorySideIdentity {
+    pub id: u32,
+    pub participant_type: CombatHistoryParticipantType,
+    pub position: u8,
+}
+
+impl CombatHistorySideIdentity {
+    pub fn from_raw(id: u32, participant_type: u8, position: u8) -> Result<Self, String> {
+        Ok(Self {
+            id,
+            participant_type: CombatHistoryParticipantType::from_raw(participant_type)?,
+            position,
+        })
+    }
+}
+
+pub fn opposite_combat_history_side(side: CombatHistorySideHint) -> Option<CombatHistorySideHint> {
+    match side {
+        CombatHistorySideHint::My => Some(CombatHistorySideHint::Rival),
+        CombatHistorySideHint::Rival => Some(CombatHistorySideHint::My),
+        CombatHistorySideHint::Unknown => None,
+    }
+}
+
+pub fn resolve_combat_history_side_identity(
+    identity: CombatHistorySideIdentity,
+    participants: CombatHistorySideParticipants,
+    contextual_side: CombatHistorySideHint,
+) -> Result<CombatHistorySideHint, String> {
+    if identity.id == participants.my_uin {
+        return Ok(CombatHistorySideHint::My);
+    }
+    if identity.id == participants.rival_uin {
+        return Ok(CombatHistorySideHint::Rival);
+    }
+
+    let side = resolve_combat_history_side(
+        identity.id,
+        identity.participant_type,
+        participants.my_uin,
+        participants.my_type,
+        participants.rival_uin,
+        participants.rival_type,
+    );
+    if side != CombatHistorySideHint::Unknown {
+        return Ok(side);
+    }
+
+    if identity.position != 0 && contextual_side != CombatHistorySideHint::Unknown {
+        return Ok(contextual_side);
+    }
+
+    Err(format!(
+        "combat side unresolved id={} participant_type={:?} position={}",
+        identity.id, identity.participant_type, identity.position
+    ))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -708,6 +777,50 @@ mod tests {
             assert_eq!(participant_type.raw(), raw);
         }
         assert!(CombatHistoryParticipantType::from_raw(22).is_err());
+    }
+
+    #[test]
+    fn side_identity_uses_context_when_non_player_types_are_ambiguous() {
+        let participants = CombatHistorySideParticipants {
+            my_uin: 1773701277,
+            my_type: CombatHistoryParticipantType::NonPlayer,
+            rival_uin: 1974029771,
+            rival_type: CombatHistoryParticipantType::NonPlayer,
+        };
+
+        assert_eq!(
+            resolve_combat_history_side_identity(
+                CombatHistorySideIdentity {
+                    id: 470926678,
+                    participant_type: CombatHistoryParticipantType::NonPlayer,
+                    position: 4,
+                },
+                participants,
+                CombatHistorySideHint::Rival,
+            ),
+            Ok(CombatHistorySideHint::Rival)
+        );
+    }
+
+    #[test]
+    fn side_identity_rejects_ambiguous_non_player_without_context() {
+        let participants = CombatHistorySideParticipants {
+            my_uin: 1773701277,
+            my_type: CombatHistoryParticipantType::NonPlayer,
+            rival_uin: 1974029771,
+            rival_type: CombatHistoryParticipantType::NonPlayer,
+        };
+
+        assert!(resolve_combat_history_side_identity(
+            CombatHistorySideIdentity {
+                id: 470926678,
+                participant_type: CombatHistoryParticipantType::NonPlayer,
+                position: 4,
+            },
+            participants,
+            CombatHistorySideHint::Unknown,
+        )
+        .is_err());
     }
 
     #[test]
