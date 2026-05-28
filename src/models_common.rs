@@ -395,6 +395,7 @@ impl CombatHistoryParticipantDisplayState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistorySpiritFieldStatus {
+    AllAbnormalImmunity,
     AbnormalImmunity {
         abnormal_state: CombatHistoryAbnormalState,
     },

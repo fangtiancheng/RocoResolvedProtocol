@@ -223,9 +223,13 @@ pub struct CombatHistoryAttackEvent {
     pub action: CombatHistoryRoundAction,
     pub actor_id: u32,
     pub actor_position: u8,
+    #[serde(default)]
+    pub actor_display_state: CombatHistoryParticipantDisplayState,
     pub target_id: u32,
     pub target_side: CombatHistorySideHint,
     pub target_position: u8,
+    #[serde(default)]
+    pub target_display_state: CombatHistoryParticipantDisplayState,
     pub is_critical: bool,
     pub is_miss: bool,
     pub form_change: Option<CombatHistoryFormChange>,
