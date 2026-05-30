@@ -719,13 +719,13 @@ pub struct CombatHistoryNewSpiritInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistorySpiritPropertyVar {
-    pub index: u8,
+pub struct CombatHistorySpiritGrowthResult {
+    pub position: u8,
     pub exp: u32,
-    pub d_level: u8,
-    pub c_level: u8,
+    pub level_delta: u8,
+    pub current_level: u8,
     pub next_exp: u32,
-    pub deffort: u16,
+    pub effort: u16,
     pub pa: u16,
     pub dpa: u16,
     pub pd: u16,

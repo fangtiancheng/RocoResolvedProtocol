@@ -4,10 +4,10 @@ use crate::{
     CombatHistoryAbnormalState, CombatHistoryFieldEffect, CombatHistoryGuardianPetStats,
     CombatHistoryHpVar, CombatHistoryIntimacy, CombatHistoryItem, CombatHistoryNewSpiritInfo,
     CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
-    CombatHistoryPerspective, CombatHistoryReturnCode, CombatHistorySideHint,
-    CombatHistorySkillState, CombatHistorySpiritEquipment, CombatHistorySpiritFieldState,
-    CombatHistorySpiritPanelStats, CombatHistorySpiritPropertyStage,
-    CombatHistorySpiritPropertyStages, CombatHistorySpiritPropertyVar, CombatHistorySpiritSex,
+    CombatHistoryParticipantType, CombatHistoryPerspective, CombatHistoryReturnCode,
+    CombatHistorySideHint, CombatHistorySkillState, CombatHistorySpiritEquipment,
+    CombatHistorySpiritFieldState, CombatHistorySpiritGrowthResult, CombatHistorySpiritPanelStats,
+    CombatHistorySpiritPropertyStage, CombatHistorySpiritPropertyStages, CombatHistorySpiritSex,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,23 +169,88 @@ impl CombatHistoryActionKind {
 pub struct CombatHistoryRoundResultEvent {
     pub round: u32,
     pub extra_settlement: bool,
-    pub attacks: Vec<CombatHistoryAttackEvent>,
-    pub buffs: Vec<CombatHistoryBuffEvent>,
-    pub result_info: Option<CombatHistoryResultInfo>,
+    pub events: Vec<CombatHistoryRoundEvent>,
+    pub settlement: Option<CombatHistoryRoundSettlement>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryRoundEvent {
+    Attack(CombatHistoryAttackEvent),
+    Buff(CombatHistoryBuffEvent),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryResultInfo {
-    pub finish_reason: Option<CombatHistoryFinishReason>,
+pub struct CombatHistoryRoundSettlement {
     pub action_availability: CombatHistoryActionAvailability,
-    pub spirit_property_changes: Vec<CombatHistorySpiritPropertyVar>,
+    pub finish: Option<CombatHistoryBattleFinish>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryBattleFinish {
+    pub reason: CombatHistoryFinishReason,
+    pub spirit_growth_results: Vec<CombatHistorySpiritGrowthResult>,
     pub obtain_items: Vec<CombatHistoryItem>,
-    pub spirit_infos: Vec<CombatHistoryNewSpiritInfo>,
+    pub captured_spirits: Vec<CombatHistoryNewSpiritInfo>,
     pub trainer_exp: u32,
     pub honour_point: u32,
     pub next_level_trainer_exp: u32,
-    pub exp_add_bits: u8,
+    pub exp_add_flags: CombatHistoryExpAddFlags,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryExpAddFlags {
+    pub vip_bonus: bool,
+    pub holiday_bonus: bool,
+    pub daily_roco_bonus: bool,
+    pub tower_activity_bonus: bool,
+    pub unknown_bit5: bool,
+    pub unknown_bit6: bool,
+    pub unknown_bit7: bool,
+    pub unknown_bit8: bool,
+}
+
+impl CombatHistoryExpAddFlags {
+    pub fn from_raw(raw: u8) -> Self {
+        Self {
+            vip_bonus: raw & (1 << 0) != 0,
+            holiday_bonus: raw & (1 << 1) != 0,
+            daily_roco_bonus: raw & (1 << 2) != 0,
+            tower_activity_bonus: raw & (1 << 3) != 0,
+            unknown_bit5: raw & (1 << 4) != 0,
+            unknown_bit6: raw & (1 << 5) != 0,
+            unknown_bit7: raw & (1 << 6) != 0,
+            unknown_bit8: raw & (1 << 7) != 0,
+        }
+    }
+
+    pub fn to_raw(self) -> u8 {
+        [
+            self.vip_bonus,
+            self.holiday_bonus,
+            self.daily_roco_bonus,
+            self.tower_activity_bonus,
+            self.unknown_bit5,
+            self.unknown_bit6,
+            self.unknown_bit7,
+            self.unknown_bit8,
+        ]
+        .into_iter()
+        .enumerate()
+        .fold(
+            0_u8,
+            |raw, (index, enabled)| {
+                if enabled {
+                    raw | (1_u8 << index)
+                } else {
+                    raw
+                }
+            },
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -222,13 +287,13 @@ pub struct CombatHistoryAttackEvent {
     pub actor_side: CombatHistorySideHint,
     pub action: CombatHistoryRoundAction,
     pub actor_id: u32,
+    pub actor_participant_type: CombatHistoryParticipantType,
     pub actor_position: u8,
-    #[serde(default)]
     pub actor_display_state: CombatHistoryParticipantDisplayState,
     pub target_id: u32,
+    pub target_participant_type: CombatHistoryParticipantType,
     pub target_side: CombatHistorySideHint,
     pub target_position: u8,
-    #[serde(default)]
     pub target_display_state: CombatHistoryParticipantDisplayState,
     pub is_critical: bool,
     pub is_miss: bool,
@@ -277,6 +342,7 @@ pub enum CombatHistoryRoundAction {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackAffectEvent {
     pub target_id: u32,
+    pub target_participant_type: CombatHistoryParticipantType,
     pub target_side: CombatHistorySideHint,
     pub target_position: u8,
     pub skill_pp_left: [Option<u8>; 4],
