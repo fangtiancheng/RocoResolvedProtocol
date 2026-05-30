@@ -284,22 +284,30 @@ impl CombatHistoryFinishReason {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackEvent {
-    pub actor_side: CombatHistorySideHint,
+    pub actor: CombatHistoryAttackParticipant,
+    pub target: CombatHistoryAttackParticipant,
     pub action: CombatHistoryRoundAction,
-    pub actor_id: u32,
-    pub actor_participant_type: CombatHistoryParticipantType,
-    pub actor_position: u8,
-    pub actor_display_state: CombatHistoryParticipantDisplayState,
-    pub target_id: u32,
-    pub target_participant_type: CombatHistoryParticipantType,
-    pub target_side: CombatHistorySideHint,
-    pub target_position: u8,
-    pub target_display_state: CombatHistoryParticipantDisplayState,
-    pub is_critical: bool,
-    pub is_miss: bool,
+    pub outcome: CombatHistoryAttackOutcome,
     pub form_change: Option<CombatHistoryFormChange>,
     pub weather_change: Option<CombatHistoryFieldEffect>,
     pub affects: Vec<CombatHistoryAttackAffectEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryAttackParticipant {
+    pub id: u32,
+    pub participant_type: CombatHistoryParticipantType,
+    pub side: CombatHistorySideHint,
+    pub position: u8,
+    pub display_state: CombatHistoryParticipantDisplayState,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryAttackOutcome {
+    pub is_critical: bool,
+    pub is_miss: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -319,11 +327,9 @@ pub enum CombatHistoryFormChange {
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryRoundAction {
     Skill {
-        actor_position: u8,
         skill_id: u32,
     },
     UseItem {
-        actor_position: u8,
         item_id: u32,
     },
     ChangeSpirit {
@@ -332,7 +338,6 @@ pub enum CombatHistoryRoundAction {
     },
     Escape,
     ServerUnhandled {
-        actor_position: u8,
         raw_skill_type: u8,
         action_value: u32,
     },
@@ -453,32 +458,39 @@ pub enum CombatHistoryAbnormalStateChangeKind {
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAbnormalStateChange {
     pub abnormal_state: CombatHistoryAbnormalState,
-    pub cause: u8,
+    pub cause: CombatHistoryAbnormalStateChangeCause,
     pub kind: CombatHistoryAbnormalStateChangeKind,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CombatHistoryAbnormalStateChangeCause {
+    Unknown { raw_code: u8 },
+}
+
+impl CombatHistoryAbnormalStateChangeCause {
+    pub fn from_raw(raw: u8) -> Self {
+        Self::Unknown { raw_code: raw }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryBuffEvent {
-    pub id: u32,
-    pub target_side: CombatHistorySideHint,
-    pub index: u8,
-    pub abnormal_state: CombatHistoryAbnormalState,
-    pub hp_var: CombatHistoryHpVar,
-    pub pro_vars: CombatHistorySpiritPropertyStages,
+    pub main_effect: CombatHistoryBuffEffect,
     pub is_remove: bool,
-    pub other: Option<CombatHistoryBuffOtherEvent>,
+    pub secondary_effect: Option<CombatHistoryBuffEffect>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CombatHistoryBuffOtherEvent {
-    pub other_id: u32,
+pub struct CombatHistoryBuffEffect {
+    pub target_id: u32,
     pub target_side: CombatHistorySideHint,
-    pub other_index: u8,
+    pub target_position: u8,
     pub abnormal_state: CombatHistoryAbnormalState,
-    pub other_hp_var: CombatHistoryHpVar,
-    pub other_pro_vars: CombatHistorySpiritPropertyStages,
+    pub hp_var: CombatHistoryHpVar,
+    pub property_stages: CombatHistorySpiritPropertyStages,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
