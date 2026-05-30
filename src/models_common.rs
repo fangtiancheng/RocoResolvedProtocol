@@ -125,6 +125,45 @@ pub fn opposite_combat_history_side(side: CombatHistorySideHint) -> Option<Comba
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryCombatantIdentity {
+    pub id: u32,
+    pub participant_type: CombatHistoryParticipantType,
+}
+
+impl CombatHistoryCombatantIdentity {
+    pub fn from_raw(id: u32, participant_type: u8) -> Result<Self, String> {
+        Ok(Self {
+            id,
+            participant_type: CombatHistoryParticipantType::from_raw(participant_type)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistoryCombatantRef {
+    pub identity: CombatHistoryCombatantIdentity,
+    pub side: CombatHistorySideHint,
+    pub position: u8,
+}
+
+impl CombatHistoryCombatantRef {
+    pub fn from_raw(
+        id: u32,
+        participant_type: u8,
+        side: CombatHistorySideHint,
+        position: u8,
+    ) -> Result<Self, String> {
+        Ok(Self {
+            identity: CombatHistoryCombatantIdentity::from_raw(id, participant_type)?,
+            side,
+            position,
+        })
+    }
+}
+
 pub fn resolve_combat_history_side_identity(
     identity: CombatHistorySideIdentity,
     participants: CombatHistorySideParticipants,

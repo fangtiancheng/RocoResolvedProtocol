@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CombatHistoryAbnormalState, CombatHistoryFieldEffect, CombatHistoryGuardianPetStats,
-    CombatHistoryHpVar, CombatHistoryIntimacy, CombatHistoryItem, CombatHistoryNewSpiritInfo,
-    CombatHistoryParticipantDisplayState, CombatHistoryParticipantIdentity,
-    CombatHistoryParticipantType, CombatHistoryPerspective, CombatHistoryReturnCode,
+    CombatHistoryAbnormalState, CombatHistoryCombatantRef, CombatHistoryFieldEffect,
+    CombatHistoryGuardianPetStats, CombatHistoryHpVar, CombatHistoryIntimacy, CombatHistoryItem,
+    CombatHistoryNewSpiritInfo, CombatHistoryParticipantDisplayState,
+    CombatHistoryParticipantIdentity, CombatHistoryPerspective, CombatHistoryReturnCode,
     CombatHistorySideHint, CombatHistorySkillState, CombatHistorySpiritEquipment,
     CombatHistorySpiritFieldState, CombatHistorySpiritGrowthResult, CombatHistorySpiritPanelStats,
     CombatHistorySpiritPropertyStage, CombatHistorySpiritPropertyStages, CombatHistorySpiritSex,
@@ -296,10 +296,7 @@ pub struct CombatHistoryAttackEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackParticipant {
-    pub id: u32,
-    pub participant_type: CombatHistoryParticipantType,
-    pub side: CombatHistorySideHint,
-    pub position: u8,
+    pub combatant: CombatHistoryCombatantRef,
     pub display_state: CombatHistoryParticipantDisplayState,
 }
 
@@ -318,7 +315,6 @@ pub enum CombatHistoryFormChange {
         continues_attack: bool,
     },
     RestoreNormal {
-        trigger_skill_id: u32,
         continues_attack: bool,
     },
 }
@@ -346,10 +342,7 @@ pub enum CombatHistoryRoundAction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAttackAffectEvent {
-    pub target_id: u32,
-    pub target_participant_type: CombatHistoryParticipantType,
-    pub target_side: CombatHistorySideHint,
-    pub target_position: u8,
+    pub target: CombatHistoryCombatantRef,
     pub skill_pp_left: [Option<u8>; 4],
     pub hp_var: CombatHistoryHpVar,
     pub property_stages: CombatHistorySpiritPropertyStages,
@@ -485,9 +478,7 @@ pub struct CombatHistoryBuffEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryBuffEffect {
-    pub target_id: u32,
-    pub target_side: CombatHistorySideHint,
-    pub target_position: u8,
+    pub target: CombatHistoryCombatantRef,
     pub abnormal_state: CombatHistoryAbnormalState,
     pub hp_var: CombatHistoryHpVar,
     pub property_stages: CombatHistorySpiritPropertyStages,
