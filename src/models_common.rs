@@ -599,11 +599,49 @@ pub struct CombatHistorySpiritEquipment {
     pub server_id: u32,
     pub item_id: u32,
     pub equipment_type: CombatHistorySpiritEquipmentType,
-    pub quality: u8,
-    pub base_attr: CombatHistorySpiritEquipmentAttr,
-    pub base_value: u8,
-    pub special_attr: Option<CombatHistorySpiritEquipmentAttr>,
-    pub special_value: u8,
+    pub quality: CombatHistorySpiritEquipmentQuality,
+    pub base_effect: CombatHistorySpiritEquipmentEffect,
+    pub special_effect: Option<CombatHistorySpiritEquipmentEffect>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHistorySpiritEquipmentEffect {
+    pub attr: CombatHistorySpiritEquipmentAttr,
+    pub value: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySpiritEquipmentQuality {
+    Orange,
+    Green,
+    Blue,
+    Red,
+    Temporary,
+}
+
+impl CombatHistorySpiritEquipmentQuality {
+    pub fn from_raw(raw: u8) -> Result<Self, String> {
+        match raw {
+            1 => Ok(Self::Orange),
+            2 => Ok(Self::Green),
+            3 => Ok(Self::Blue),
+            4 => Ok(Self::Red),
+            5 => Ok(Self::Temporary),
+            _ => Err(format!("unknown combat spirit equipment quality: {raw}")),
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::Orange => 1,
+            Self::Green => 2,
+            Self::Blue => 3,
+            Self::Red => 4,
+            Self::Temporary => 5,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
