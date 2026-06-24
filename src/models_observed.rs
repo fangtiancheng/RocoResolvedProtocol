@@ -143,23 +143,97 @@ pub struct CombatHistoryAcknowledgedAction {
     pub skill_slot: Option<u8>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CombatHistoryActionKind {
     Skill,
     ChangeSpirit,
     UseItem,
     Escape,
+    ServerUnhandled,
+    Unknown(u8),
 }
 
 impl CombatHistoryActionKind {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Self {
         match raw {
-            1 => Ok(Self::Skill),
-            2 => Ok(Self::ChangeSpirit),
-            3 => Ok(Self::UseItem),
-            4 => Ok(Self::Escape),
-            value => Err(format!("unknown combat history action kind: {value}")),
+            1 => Self::Skill,
+            2 => Self::ChangeSpirit,
+            3 => Self::UseItem,
+            4 => Self::Escape,
+            5 => Self::ServerUnhandled,
+            value => Self::Unknown(value),
+        }
+    }
+
+    pub fn raw(self) -> u8 {
+        match self {
+            Self::Skill => 1,
+            Self::ChangeSpirit => 2,
+            Self::UseItem => 3,
+            Self::Escape => 4,
+            Self::ServerUnhandled => 5,
+            Self::Unknown(value) => value,
+        }
+    }
+}
+
+impl Serialize for CombatHistoryActionKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::Skill => serializer.serialize_str("skill"),
+            Self::ChangeSpirit => serializer.serialize_str("change_spirit"),
+            Self::UseItem => serializer.serialize_str("use_item"),
+            Self::Escape => serializer.serialize_str("escape"),
+            Self::ServerUnhandled => serializer.serialize_str("server_unhandled"),
+            Self::Unknown(value) => {
+                use serde::ser::SerializeStruct;
+                let mut state = serializer.serialize_struct("CombatHistoryActionKind", 2)?;
+                state.serialize_field("kind", "unknown")?;
+                state.serialize_field("raw", value)?;
+                state.end()
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for CombatHistoryActionKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum EncodedActionKind {
+            Known(String),
+            Unknown { kind: String, raw: u8 },
+        }
+
+        match EncodedActionKind::deserialize(deserializer)? {
+            EncodedActionKind::Known(kind) => match kind.as_str() {
+                "skill" => Ok(Self::Skill),
+                "change_spirit" => Ok(Self::ChangeSpirit),
+                "use_item" => Ok(Self::UseItem),
+                "escape" => Ok(Self::Escape),
+                "server_unhandled" => Ok(Self::ServerUnhandled),
+                other => Err(serde::de::Error::unknown_variant(
+                    other,
+                    &[
+                        "skill",
+                        "change_spirit",
+                        "use_item",
+                        "escape",
+                        "server_unhandled",
+                    ],
+                )),
+            },
+            EncodedActionKind::Unknown { kind, raw } if kind == "unknown" => Ok(Self::Unknown(raw)),
+            EncodedActionKind::Unknown { kind, .. } => Err(serde::de::Error::unknown_variant(
+                kind.as_str(),
+                &["unknown"],
+            )),
         }
     }
 }
@@ -334,7 +408,10 @@ pub enum CombatHistoryRoundAction {
     },
     Escape,
     ServerUnhandled {
-        raw_skill_type: u8,
+        action_value: u32,
+    },
+    Unknown {
+        action_kind: CombatHistoryActionKind,
         action_value: u32,
     },
 }
@@ -621,6 +698,43 @@ mod tests {
             assert_eq!(kind.raw(), raw);
         }
         assert!(CombatHistoryChangeSpiritKind::from_raw(4).is_err());
+    }
+
+    #[test]
+    fn combat_action_kind_round_trips_known_and_unknown_values() {
+        let cases = [
+            (1, CombatHistoryActionKind::Skill),
+            (2, CombatHistoryActionKind::ChangeSpirit),
+            (3, CombatHistoryActionKind::UseItem),
+            (4, CombatHistoryActionKind::Escape),
+            (5, CombatHistoryActionKind::ServerUnhandled),
+            (99, CombatHistoryActionKind::Unknown(99)),
+        ];
+
+        for (raw, kind) in cases {
+            assert_eq!(CombatHistoryActionKind::from_raw(raw), kind);
+            assert_eq!(kind.raw(), raw);
+        }
+    }
+
+    #[test]
+    fn combat_action_kind_serializes_unknown_as_explicit_object() {
+        assert_eq!(
+            serde_json::to_value(CombatHistoryActionKind::Skill).unwrap(),
+            serde_json::json!("skill")
+        );
+        assert_eq!(
+            serde_json::to_value(CombatHistoryActionKind::Unknown(99)).unwrap(),
+            serde_json::json!({ "kind": "unknown", "raw": 99 })
+        );
+        assert_eq!(
+            serde_json::from_value::<CombatHistoryActionKind>(serde_json::json!({
+                "kind": "unknown",
+                "raw": 99
+            }))
+            .unwrap(),
+            CombatHistoryActionKind::Unknown(99)
+        );
     }
 
     #[test]
