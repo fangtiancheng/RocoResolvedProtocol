@@ -198,35 +198,88 @@ pub fn resolve_combat_history_side_identity(
     ))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryFieldEffect {
+    #[default]
     None,
-    ScorchingSun { rounds_left: u8 },
-    Rain { rounds_left: u8 },
-    Hail { rounds_left: u8 },
-    Thunderstorm { rounds_left: u8 },
-    DarkCastle { rounds_left: u8 },
-    Gale { rounds_left: u8 },
-    Dreamland { rounds_left: u8 },
-    Miasma { rounds_left: u8 },
-    FertileSoil { rounds_left: u8 },
-    DragonFormation { rounds_left: u8 },
-    MartialRealm { rounds_left: u8 },
-    HolyLight { rounds_left: u8 },
-    BloodMoon { rounds_left: u8 },
-    Labyrinth { rounds_left: u8 },
-    IronWall { rounds_left: u8 },
-    Fragrance { rounds_left: u8 },
-    Fog { rounds_left: u8 },
-    Meteor { rounds_left: u8 },
-    Mirage { rounds_left: u8 },
-    Nebula { rounds_left: u8 },
-    Locked { rounds_left: u8 },
-    Dawn { rounds_left: u8 },
-    WindForestFireMountain { rounds_left: u8 },
-    Paradise { rounds_left: u8 },
-    Unknown25 { rounds_left: u8 },
+    ScorchingSun {
+        rounds_left: u8,
+    },
+    Rain {
+        rounds_left: u8,
+    },
+    Hail {
+        rounds_left: u8,
+    },
+    Thunderstorm {
+        rounds_left: u8,
+    },
+    DarkCastle {
+        rounds_left: u8,
+    },
+    Gale {
+        rounds_left: u8,
+    },
+    Dreamland {
+        rounds_left: u8,
+    },
+    Miasma {
+        rounds_left: u8,
+    },
+    FertileSoil {
+        rounds_left: u8,
+    },
+    DragonFormation {
+        rounds_left: u8,
+    },
+    MartialRealm {
+        rounds_left: u8,
+    },
+    HolyLight {
+        rounds_left: u8,
+    },
+    BloodMoon {
+        rounds_left: u8,
+    },
+    Labyrinth {
+        rounds_left: u8,
+    },
+    IronWall {
+        rounds_left: u8,
+    },
+    Fragrance {
+        rounds_left: u8,
+    },
+    Fog {
+        rounds_left: u8,
+    },
+    Meteor {
+        rounds_left: u8,
+    },
+    Mirage {
+        rounds_left: u8,
+    },
+    Nebula {
+        rounds_left: u8,
+    },
+    Locked {
+        rounds_left: u8,
+    },
+    Dawn {
+        rounds_left: u8,
+    },
+    WindForestFireMountain {
+        rounds_left: u8,
+    },
+    Paradise {
+        rounds_left: u8,
+    },
+    Unknown25 {
+        rounds_left: u8,
+    },
 }
 
 impl CombatHistoryFieldEffect {
@@ -295,9 +348,13 @@ impl CombatHistoryFieldEffect {
     pub fn is_none(self) -> bool {
         matches!(self, Self::None)
     }
+
+    pub fn same_kind(self, other: Self) -> bool {
+        self.raw_id() == other.raw_id()
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryIntimacy {
     Progress { closeness: u8 },
@@ -347,7 +404,7 @@ impl Default for CombatHistoryIntimacy {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistorySpiritSex {
     Male,
@@ -503,7 +560,7 @@ impl CombatHistoryLockedEnhance {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistoryAbnormalState {
     Sleep,
@@ -521,7 +578,9 @@ pub enum CombatHistoryAbnormalState {
     Bind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistorySpiritFieldState {
     #[default]
@@ -719,7 +778,7 @@ impl CombatHistorySpiritEquipmentType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistorySpiritPropertyStages {
     pub pa: i8,
