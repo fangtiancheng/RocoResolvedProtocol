@@ -126,6 +126,34 @@ pub fn opposite_combat_history_side(side: CombatHistorySideHint) -> Option<Comba
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistorySkillElement {
+    Normal,
+    Fire,
+    Water,
+    Grass,
+    Electric,
+    Ice,
+    Fighting,
+    Poison,
+    Ground,
+    Flying,
+    Psychic,
+    Bug,
+    Rock,
+    Ghost,
+    Dragon,
+    Dark,
+    Steel,
+    Light,
+    GodFire,
+    GodWater,
+    GodGrass,
+    God,
+    Unknown(u8),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryCombatantIdentity {
     pub id: u32,
