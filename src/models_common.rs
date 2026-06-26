@@ -310,6 +310,14 @@ pub enum CombatHistoryFieldEffect {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryFieldEffectClass {
+    None,
+    Weather,
+    Environment,
+}
+
 impl CombatHistoryFieldEffect {
     pub fn raw_id(self) -> u8 {
         match self {
@@ -375,6 +383,48 @@ impl CombatHistoryFieldEffect {
 
     pub fn is_none(self) -> bool {
         matches!(self, Self::None)
+    }
+
+    pub fn class(self) -> CombatHistoryFieldEffectClass {
+        match self {
+            Self::None | Self::Locked { .. } => CombatHistoryFieldEffectClass::None,
+            Self::ScorchingSun { .. }
+            | Self::Rain { .. }
+            | Self::Hail { .. }
+            | Self::Thunderstorm { .. }
+            | Self::Gale { .. }
+            | Self::HolyLight { .. }
+            | Self::BloodMoon { .. }
+            | Self::Fog { .. }
+            | Self::Meteor { .. }
+            | Self::Nebula { .. }
+            | Self::Dawn { .. } => CombatHistoryFieldEffectClass::Weather,
+            Self::DarkCastle { .. }
+            | Self::Dreamland { .. }
+            | Self::Miasma { .. }
+            | Self::FertileSoil { .. }
+            | Self::DragonFormation { .. }
+            | Self::MartialRealm { .. }
+            | Self::Labyrinth { .. }
+            | Self::IronWall { .. }
+            | Self::Fragrance { .. }
+            | Self::Mirage { .. }
+            | Self::WindForestFireMountain { .. }
+            | Self::Paradise { .. } => CombatHistoryFieldEffectClass::Environment,
+            Self::Unknown25 { .. } => CombatHistoryFieldEffectClass::None,
+        }
+    }
+
+    pub fn is_weather(self) -> bool {
+        matches!(self.class(), CombatHistoryFieldEffectClass::Weather)
+    }
+
+    pub fn is_environment(self) -> bool {
+        matches!(self.class(), CombatHistoryFieldEffectClass::Environment)
+    }
+
+    pub fn has_no_weather_environment(self) -> bool {
+        matches!(self.class(), CombatHistoryFieldEffectClass::None)
     }
 
     pub fn same_kind(self, other: Self) -> bool {
@@ -990,6 +1040,36 @@ mod tests {
             CombatHistorySideHint::Unknown,
         )
         .is_err());
+    }
+
+    #[test]
+    fn field_effect_classifies_none_weather_and_environment() {
+        assert_eq!(
+            CombatHistoryFieldEffect::None.class(),
+            CombatHistoryFieldEffectClass::None
+        );
+        assert_eq!(
+            CombatHistoryFieldEffect::Locked { rounds_left: 2 }.class(),
+            CombatHistoryFieldEffectClass::None
+        );
+        assert_eq!(
+            CombatHistoryFieldEffect::Rain { rounds_left: 2 }.class(),
+            CombatHistoryFieldEffectClass::Weather
+        );
+        assert_eq!(
+            CombatHistoryFieldEffect::Fragrance { rounds_left: 2 }.class(),
+            CombatHistoryFieldEffectClass::Environment
+        );
+
+        assert!(CombatHistoryFieldEffect::Thunderstorm { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::BloodMoon { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::Nebula { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::HolyLight { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::Meteor { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::Dawn { rounds_left: 2 }.is_weather());
+        assert!(CombatHistoryFieldEffect::Fragrance { rounds_left: 2 }.is_environment());
+        assert!(CombatHistoryFieldEffect::Locked { rounds_left: 2 }.has_no_weather_environment());
+        assert!(CombatHistoryFieldEffect::Unknown25 { rounds_left: 2 }.has_no_weather_environment());
     }
 
     #[test]
