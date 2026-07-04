@@ -134,28 +134,49 @@ pub fn opposite_combat_history_side(side: CombatHistorySideHint) -> Option<Comba
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistorySkillElement {
+    /// 普通系。
     Normal,
+    /// 火系。
     Fire,
+    /// 水系。
     Water,
+    /// 草系。
     Grass,
+    /// 电系。
     Electric,
+    /// 冰系。
     Ice,
+    /// 武系。
     Fighting,
+    /// 毒系。
     Poison,
+    /// 土系。
     Ground,
+    /// 翼系。
     Flying,
+    /// 萌系。
     Psychic,
+    /// 虫系。
     Bug,
+    /// 石系。
     Rock,
+    /// 幽系。
     Ghost,
+    /// 龙系。
     Dragon,
+    /// 恶魔系。
     Dark,
+    /// 机械系。
     Steel,
+    /// 光系。
     Light,
+    /// 神火系。
     GodFire,
+    /// 神水系。
     GodWater,
+    /// 神草系。
     GodGrass,
-    God,
+    /// 未识别的原始属性值。
     Unknown(u8),
 }
 
