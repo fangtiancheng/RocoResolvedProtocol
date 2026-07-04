@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models_error::CombatHistoryRawValueError;
 use crate::{
     CombatHistoryAbnormalState, CombatHistoryCombatantRef, CombatHistoryFieldEffect,
     CombatHistoryGuardianPetStats, CombatHistoryHpVar, CombatHistoryIntimacy, CombatHistoryItem,
@@ -336,13 +337,13 @@ pub enum CombatHistoryFinishReason {
 }
 
 impl CombatHistoryFinishReason {
-    pub fn from_raw(raw: u8) -> Result<Option<Self>, String> {
+    pub fn from_raw(raw: u8) -> Result<Option<Self>, CombatHistoryRawValueError> {
         match raw {
             0 => Ok(None),
             1 => Ok(Some(Self::Lose)),
             2 => Ok(Some(Self::Win)),
             3 => Ok(Some(Self::RunAway)),
-            value => Err(format!("unknown combat finish reason: {value}")),
+            raw => Err(CombatHistoryRawValueError::UnknownFinishReason { raw }),
         }
     }
 
@@ -452,7 +453,7 @@ pub enum CombatHistoryImmunity {
 }
 
 impl CombatHistoryImmunity {
-    pub fn from_effect_id(effect_id: u32) -> Result<Self, String> {
+    pub fn from_effect_id(effect_id: u32) -> Result<Self, CombatHistoryRawValueError> {
         Ok(match effect_id {
             10001..=10013 => CombatHistoryAbnormalState::from_raw_id(effect_id - 10000)
                 .map(|abnormal_state| Self::InflictAbnormalState { abnormal_state })?,
@@ -470,14 +471,14 @@ impl CombatHistoryImmunity {
         })
     }
 
-    pub fn from_raw_type_id(type_id: u16) -> Result<Self, String> {
+    pub fn from_raw_type_id(type_id: u16) -> Result<Self, CombatHistoryRawValueError> {
         Self::from_effect_id(10000 + u32::from(type_id))
     }
 }
 
 fn property_stage_from_effect_offset(
     offset: u32,
-) -> Result<CombatHistorySpiritPropertyStage, String> {
+) -> Result<CombatHistorySpiritPropertyStage, CombatHistoryRawValueError> {
     Ok(match offset {
         1 => CombatHistorySpiritPropertyStage::MagicDefense,
         2 => CombatHistorySpiritPropertyStage::PhysicalAttack,
@@ -486,10 +487,8 @@ fn property_stage_from_effect_offset(
         5 => CombatHistorySpiritPropertyStage::Evasion,
         6 => CombatHistorySpiritPropertyStage::Speed,
         7 => CombatHistorySpiritPropertyStage::PhysicalDefense,
-        value => {
-            return Err(format!(
-                "unknown combat immunity property effect offset: {value}"
-            ))
+        offset => {
+            return Err(CombatHistoryRawValueError::UnknownImmunityPropertyEffectOffset { offset })
         }
     })
 }
@@ -505,14 +504,14 @@ pub enum CombatHistoryRestrainHint {
 }
 
 impl CombatHistoryRestrainHint {
-    pub fn from_raw(raw: i8) -> Result<Self, String> {
+    pub fn from_raw(raw: i8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             0 => Ok(Self::None),
             -2 => Ok(Self::Resisted),
             -3 => Ok(Self::StronglyResisted),
             2 => Ok(Self::Effective),
             3 => Ok(Self::SuperEffective),
-            value => Err(format!("unknown combat restrain hint: {value}")),
+            raw => Err(CombatHistoryRawValueError::UnknownRestrainHint { raw }),
         }
     }
 }
@@ -582,13 +581,13 @@ pub enum CombatHistoryChangeSpiritKind {
 }
 
 impl CombatHistoryChangeSpiritKind {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             0 => Ok(Self::Normal),
             1 => Ok(Self::Silent),
             2 => Ok(Self::Forced),
             3 => Ok(Self::ForcedSilent),
-            value => Err(format!("unknown combat change spirit kind: {value}")),
+            raw => Err(CombatHistoryRawValueError::UnknownChangeSpiritKind { raw }),
         }
     }
 

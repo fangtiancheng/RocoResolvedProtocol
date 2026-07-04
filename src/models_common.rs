@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models_error::CombatHistoryRawValueError;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatHistoryPerspective {
@@ -30,7 +32,7 @@ pub enum CombatHistoryParticipantType {
 }
 
 impl CombatHistoryParticipantType {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             0 => Ok(Self::Player),
             1 => Ok(Self::Object),
@@ -40,7 +42,7 @@ impl CombatHistoryParticipantType {
             17 => Ok(Self::NonPlayer17),
             21 => Ok(Self::NonPlayer21),
             157 => Ok(Self::NonPlayer157),
-            value => Err(format!("unknown combat participant type: {value}")),
+            _ => Err(CombatHistoryRawValueError::UnknownParticipantType { raw }),
         }
     }
 
@@ -108,7 +110,11 @@ pub struct CombatHistorySideIdentity {
 }
 
 impl CombatHistorySideIdentity {
-    pub fn from_raw(id: u32, participant_type: u8, position: u8) -> Result<Self, String> {
+    pub fn from_raw(
+        id: u32,
+        participant_type: u8,
+        position: u8,
+    ) -> Result<Self, CombatHistoryRawValueError> {
         Ok(Self {
             id,
             participant_type: CombatHistoryParticipantType::from_raw(participant_type)?,
@@ -161,7 +167,7 @@ pub struct CombatHistoryCombatantIdentity {
 }
 
 impl CombatHistoryCombatantIdentity {
-    pub fn from_raw(id: u32, participant_type: u8) -> Result<Self, String> {
+    pub fn from_raw(id: u32, participant_type: u8) -> Result<Self, CombatHistoryRawValueError> {
         Ok(Self {
             id,
             participant_type: CombatHistoryParticipantType::from_raw(participant_type)?,
@@ -183,7 +189,7 @@ impl CombatHistoryCombatantRef {
         participant_type: u8,
         side: CombatHistorySideHint,
         position: u8,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, CombatHistoryRawValueError> {
         Ok(Self {
             identity: CombatHistoryCombatantIdentity::from_raw(id, participant_type)?,
             side,
@@ -444,16 +450,15 @@ pub enum CombatHistoryIntimacy {
 }
 
 impl CombatHistoryIntimacy {
-    pub fn from_raw(closeness: u8, affiliation: u8) -> Result<Self, String> {
+    pub fn from_raw(closeness: u8, affiliation: u8) -> Result<Self, CombatHistoryRawValueError> {
         if closeness > 100 {
-            return Err(format!(
-                "combat intimacy closeness out of range: {closeness}"
-            ));
+            return Err(CombatHistoryRawValueError::IntimacyClosenessOutOfRange { closeness });
         }
         if affiliation != 0 && closeness != 100 {
-            return Err(format!(
-                "combat intimacy invalid full label: affiliation={affiliation}, closeness={closeness}"
-            ));
+            return Err(CombatHistoryRawValueError::IntimacyInvalidFullLabel {
+                affiliation,
+                closeness,
+            });
         }
         match affiliation {
             0 => Ok(Self::Progress { closeness }),
@@ -462,9 +467,7 @@ impl CombatHistoryIntimacy {
             3 => Ok(Self::Inseparable),
             4 => Ok(Self::Soulmate),
             5 => Ok(Self::Friendly),
-            _ => Err(format!(
-                "unknown combat intimacy affiliation: {affiliation}"
-            )),
+            _ => Err(CombatHistoryRawValueError::UnknownIntimacyAffiliation { affiliation }),
         }
     }
 
@@ -490,11 +493,11 @@ pub enum CombatHistorySpiritSex {
 }
 
 impl CombatHistorySpiritSex {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             1 => Ok(Self::Male),
             2 => Ok(Self::Female),
-            _ => Err(format!("unknown combat spirit sex: {raw}")),
+            _ => Err(CombatHistoryRawValueError::UnknownSpiritSex { raw }),
         }
     }
 }
@@ -610,7 +613,7 @@ pub enum CombatHistoryLockedEnhance {
 }
 
 impl CombatHistoryLockedEnhance {
-    pub fn from_raw_bit(raw_bit: u8) -> Result<Self, String> {
+    pub fn from_raw_bit(raw_bit: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw_bit {
             0 => Ok(Self::PhysicalAttack),
             1 => Ok(Self::PhysicalDefense),
@@ -620,7 +623,7 @@ impl CombatHistoryLockedEnhance {
             5 => Ok(Self::Accuracy),
             6 => Ok(Self::Evasion),
             7 => Ok(Self::Critical),
-            _ => Err(format!("unknown combat locked enhance bit: {raw_bit}")),
+            _ => Err(CombatHistoryRawValueError::UnknownLockedEnhance { raw_bit }),
         }
     }
 
@@ -669,15 +672,13 @@ pub enum CombatHistorySpiritFieldState {
 }
 
 impl CombatHistorySpiritFieldState {
-    pub fn from_raw_bits(raw_bits: u8) -> Result<Self, String> {
+    pub fn from_raw_bits(raw_bits: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw_bits {
             0 => Ok(Self::Empty),
             1 => Ok(Self::Hidden),
             2 => Ok(Self::Fainted),
             3 => Ok(Self::Ready),
-            _ => Err(format!(
-                "unknown combat spirit field state bits: {raw_bits}"
-            )),
+            _ => Err(CombatHistoryRawValueError::UnknownSpiritFieldState { raw_bits }),
         }
     }
 
@@ -692,7 +693,7 @@ impl CombatHistorySpiritFieldState {
 }
 
 impl CombatHistoryAbnormalState {
-    pub fn from_raw_id(raw_id: u32) -> Result<Self, String> {
+    pub fn from_raw_id(raw_id: u32) -> Result<Self, CombatHistoryRawValueError> {
         match raw_id {
             1 => Ok(Self::Sleep),
             2 => Ok(Self::Paralysis),
@@ -707,7 +708,7 @@ impl CombatHistoryAbnormalState {
             11 => Ok(Self::Bewilder),
             12 => Ok(Self::Nightmare),
             13 => Ok(Self::Bind),
-            _ => Err(format!("unknown combat abnormal state id: {raw_id}")),
+            _ => Err(CombatHistoryRawValueError::UnknownAbnormalState { raw_id }),
         }
     }
 
@@ -759,14 +760,14 @@ pub enum CombatHistorySpiritEquipmentQuality {
 }
 
 impl CombatHistorySpiritEquipmentQuality {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             1 => Ok(Self::Orange),
             2 => Ok(Self::Green),
             3 => Ok(Self::Blue),
             4 => Ok(Self::Red),
             5 => Ok(Self::Temporary),
-            _ => Err(format!("unknown combat spirit equipment quality: {raw}")),
+            _ => Err(CombatHistoryRawValueError::UnknownEquipmentQuality { raw }),
         }
     }
 
@@ -797,7 +798,7 @@ pub enum CombatHistorySpiritEquipmentAttr {
 }
 
 impl CombatHistorySpiritEquipmentAttr {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             1 => Ok(Self::PhysicalAttack),
             2 => Ok(Self::PhysicalDefense),
@@ -809,7 +810,7 @@ impl CombatHistorySpiritEquipmentAttr {
             8 => Ok(Self::Evasion),
             9 => Ok(Self::Critical),
             10 => Ok(Self::CriticalResistance),
-            _ => Err(format!("unknown combat spirit equipment attr: {raw}")),
+            _ => Err(CombatHistoryRawValueError::UnknownEquipmentAttr { raw }),
         }
     }
 
@@ -838,12 +839,12 @@ pub enum CombatHistorySpiritEquipmentType {
 }
 
 impl CombatHistorySpiritEquipmentType {
-    pub fn from_raw(raw: u8) -> Result<Self, String> {
+    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
         match raw {
             0 => Ok(Self::Weapon),
             1 => Ok(Self::Armor),
             2 => Ok(Self::Jewelry),
-            _ => Err(format!("unknown combat spirit equipment type: {raw}")),
+            _ => Err(CombatHistoryRawValueError::UnknownEquipmentType { raw }),
         }
     }
 
