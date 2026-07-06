@@ -524,11 +524,20 @@ pub enum CombatHistoryAbnormalStateChangeKind {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatHistoryAbnormalStateTransitionSource {
+    AttackAffect,
+    BuffTick,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryAbnormalStateChange {
     pub abnormal_state: CombatHistoryAbnormalState,
     pub cause: CombatHistoryAbnormalStateChangeCause,
     pub kind: CombatHistoryAbnormalStateChangeKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transition_source: Option<CombatHistoryAbnormalStateTransitionSource>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
