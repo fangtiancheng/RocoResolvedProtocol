@@ -28,7 +28,6 @@ pub enum CombatHistoryParticipantType {
     NonPlayer9,
     NonPlayer17,
     NonPlayer21,
-    NonPlayer157,
 }
 
 impl CombatHistoryParticipantType {
@@ -41,7 +40,6 @@ impl CombatHistoryParticipantType {
             9 => Ok(Self::NonPlayer9),
             17 => Ok(Self::NonPlayer17),
             21 => Ok(Self::NonPlayer21),
-            157 => Ok(Self::NonPlayer157),
             _ => Err(CombatHistoryRawValueError::UnknownParticipantType { raw }),
         }
     }
@@ -55,7 +53,6 @@ impl CombatHistoryParticipantType {
             Self::NonPlayer9 => 9,
             Self::NonPlayer17 => 17,
             Self::NonPlayer21 => 21,
-            Self::NonPlayer157 => 157,
         }
     }
 
@@ -1007,7 +1004,6 @@ mod tests {
             (9, CombatHistoryParticipantType::NonPlayer9),
             (17, CombatHistoryParticipantType::NonPlayer17),
             (21, CombatHistoryParticipantType::NonPlayer21),
-            (157, CombatHistoryParticipantType::NonPlayer157),
         ];
 
         for (raw, participant_type) in cases {
