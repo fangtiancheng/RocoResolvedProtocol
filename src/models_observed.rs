@@ -589,27 +589,6 @@ pub enum CombatHistoryChangeSpiritKind {
     ForcedSilent,
 }
 
-impl CombatHistoryChangeSpiritKind {
-    pub fn from_raw(raw: u8) -> Result<Self, CombatHistoryRawValueError> {
-        match raw {
-            0 => Ok(Self::Normal),
-            1 => Ok(Self::Silent),
-            2 => Ok(Self::Forced),
-            3 => Ok(Self::ForcedSilent),
-            raw => Err(CombatHistoryRawValueError::UnknownChangeSpiritKind { raw }),
-        }
-    }
-
-    pub fn raw(self) -> u8 {
-        match self {
-            Self::Normal => 0,
-            Self::Silent => 1,
-            Self::Forced => 2,
-            Self::ForcedSilent => 3,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryMovieEndEvent {
@@ -691,22 +670,6 @@ pub struct CombatHistoryObservedSpiritSnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn change_spirit_kind_accepts_observed_values() {
-        let cases = [
-            (0, CombatHistoryChangeSpiritKind::Normal),
-            (1, CombatHistoryChangeSpiritKind::Silent),
-            (2, CombatHistoryChangeSpiritKind::Forced),
-            (3, CombatHistoryChangeSpiritKind::ForcedSilent),
-        ];
-
-        for (raw, kind) in cases {
-            assert_eq!(CombatHistoryChangeSpiritKind::from_raw(raw), Ok(kind));
-            assert_eq!(kind.raw(), raw);
-        }
-        assert!(CombatHistoryChangeSpiritKind::from_raw(4).is_err());
-    }
 
     #[test]
     fn combat_action_kind_round_trips_known_and_unknown_values() {

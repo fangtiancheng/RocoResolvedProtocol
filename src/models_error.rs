@@ -3,7 +3,6 @@ pub enum CombatHistoryRawValueError {
     UnknownParticipantType { raw: u8 },
     UnknownFinishReason { raw: u8 },
     UnknownRestrainHint { raw: i8 },
-    UnknownChangeSpiritKind { raw: u8 },
     UnknownAbnormalState { raw_id: u32 },
     UnknownLockedEnhance { raw_bit: u8 },
     UnknownImmunityPropertyEffectOffset { offset: u32 },
@@ -28,9 +27,6 @@ impl std::fmt::Display for CombatHistoryRawValueError {
             }
             Self::UnknownRestrainHint { raw } => {
                 write!(formatter, "unknown combat restrain hint: {raw}")
-            }
-            Self::UnknownChangeSpiritKind { raw } => {
-                write!(formatter, "unknown combat change spirit kind: {raw}")
             }
             Self::UnknownAbnormalState { raw_id } => {
                 write!(formatter, "unknown combat abnormal state id: {raw_id}")
