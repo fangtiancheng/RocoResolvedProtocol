@@ -394,6 +394,17 @@ pub enum CombatHistoryFormChange {
     },
 }
 
+impl CombatHistoryFormChange {
+    pub fn continues_attack(self) -> bool {
+        match self {
+            Self::Awaken {
+                continues_attack, ..
+            }
+            | Self::RestoreNormal { continues_attack } => continues_attack,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum CombatHistoryRoundAction {

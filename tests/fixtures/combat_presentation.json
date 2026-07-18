@@ -1,0 +1,81 @@
+{
+  "serial": 7,
+  "trigger": { "kind": "round_resolution", "round": 3 },
+  "preloads": {
+    "mySpiritIds": [12059],
+    "rivalSpiritIds": []
+  },
+  "batches": [
+    {
+      "cues": [
+        {
+          "id": 0,
+          "operation": {
+            "kind": "pet_motion",
+            "actor": { "side": "my", "position": 1, "spiritId": 2606 },
+            "assetSpiritId": 12059,
+            "motion": "attack",
+            "playback": {
+              "label": "ATTACK",
+              "signalEvents": ["ATTACK_HIT"],
+              "completeEvent": "ATTACK_END",
+              "loopMotion": false
+            }
+          }
+        },
+        {
+          "id": 1,
+          "startAfter": { "cueId": 0, "event": "ATTACK_HIT" },
+          "operation": {
+            "kind": "hp_change",
+            "actor": { "side": "rival", "position": 1, "spiritId": 30 },
+            "to": 380,
+            "delta": -120
+          }
+        },
+        {
+          "id": 2,
+          "operation": {
+            "kind": "skill_effect",
+            "skillId": 555,
+            "from": { "side": "my", "position": 1, "spiritId": 2606 },
+            "to": { "side": "rival", "position": 1, "spiritId": 30 },
+            "playback": {
+              "label": null,
+              "signalEvents": ["EMAGIC_HIT"],
+              "completeEvent": "EMAGIC_END"
+            }
+          }
+        },
+        {
+          "id": 3,
+          "operation": {
+            "kind": "public_effect",
+            "actor": { "side": "rival", "position": 1, "spiritId": 30 },
+            "effectId": 30004,
+            "playback": {
+              "label": null,
+              "signalEvents": ["EFFECT_HIT"],
+              "completeEvent": "EFFECT_END"
+            }
+          }
+        },
+        {
+          "id": 4,
+          "operation": {
+            "kind": "floating_text",
+            "actor": { "side": "rival", "position": 1, "spiritId": 30 },
+            "content": { "kind": "command", "text": "contract" }
+          }
+        }
+      ],
+      "barrier": {
+        "waits": [
+          { "cueId": 0, "event": "ATTACK_END" },
+          { "cueId": 2, "event": "EMAGIC_END" },
+          { "cueId": 3, "event": "EFFECT_END" }
+        ]
+      }
+    }
+  ]
+}
