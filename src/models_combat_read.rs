@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     CombatHistoryAbnormalState, CombatHistoryFieldEffect, CombatHistoryGuardianPetStats,
     CombatHistoryIntimacy, CombatHistoryLockedEnhance, CombatHistoryParticipantType,
-    CombatHistorySpiritFieldStatus, CombatHistorySpiritPropertyStages, CombatHistorySpiritSex,
-    CombatPresentation,
+    CombatHistorySpiritPropertyStages, CombatHistorySpiritSex, CombatPresentation,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,7 +56,6 @@ pub struct CombatStatusSnapshot {
 pub enum CombatReadSideKind {
     My,
     Rival,
-    System,
 }
 
 impl CombatReadSideKind {
@@ -65,7 +63,23 @@ impl CombatReadSideKind {
         match self {
             Self::My => "我方",
             Self::Rival => "对方",
-            Self::System => "系统",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatReadLogSource {
+    My,
+    Rival,
+    System,
+}
+
+impl From<CombatReadSideKind> for CombatReadLogSource {
+    fn from(side: CombatReadSideKind) -> Self {
+        match side {
+            CombatReadSideKind::My => Self::My,
+            CombatReadSideKind::Rival => Self::Rival,
         }
     }
 }
@@ -73,14 +87,10 @@ impl CombatReadSideKind {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatReadSnapshot {
-    pub phase: CombatPhase,
+    #[serde(flatten)]
+    pub status: CombatStatusSnapshot,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub presentation: Option<CombatPresentation>,
-    pub round: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub finish_reason: Option<CombatFinishReason>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub weather: Option<CombatHistoryFieldEffect>,
+    pub weather: Option<CombatReadWeather>,
     pub my_side: CombatReadSide,
     pub rival_side: CombatReadSide,
     pub actions: CombatReadActionState,
@@ -118,11 +128,10 @@ pub struct CombatReadSpirit {
     pub sex: CombatHistorySpiritSex,
     pub current_hp: u16,
     pub max_hp: u16,
-    pub property_ids: Vec<u32>,
-    pub property_names: Vec<String>,
+    pub properties: Vec<CombatReadProperty>,
     pub intimacy: CombatHistoryIntimacy,
     pub intimacy_label: String,
-    pub bloodline: CombatReadBloodline,
+    pub bloodline: Option<CombatReadBloodline>,
     pub equipments: [Option<CombatReadEquipment>; 3],
     pub abnormal_states: Vec<CombatReadStatus>,
     pub property_stages: Option<CombatHistorySpiritPropertyStages>,
@@ -139,33 +148,62 @@ pub struct CombatReadBloodline {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CombatReadProperty {
+    pub id: u32,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CombatReadEquipment {
     pub equipment_type: u8,
     pub equipment_id: u32,
     pub name: String,
     pub quality: u8,
-    pub base_attr: u8,
-    pub base_attr_name: String,
-    pub base_value: u8,
-    pub special_attr: u8,
-    pub special_attr_name: String,
-    pub special_value: u8,
+    pub base_effect: CombatReadEquipmentEffect,
+    pub special_effect: Option<CombatReadEquipmentEffect>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatReadEquipmentEffect {
+    pub attr: u8,
+    pub attr_name: String,
+    pub value: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatReadStatus {
-    pub raw_id: u32,
     pub kind: CombatHistoryAbnormalState,
     pub name: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatReadFieldStatusKind {
+    AllAbnormalImmunity,
+    AbnormalImmunity,
+    NegativeEnhanceImmunity,
+    PpDoubleCost,
+    ExpelImmunity,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatReadFieldStatus {
-    pub kind: CombatHistorySpiritFieldStatus,
-    pub raw_id: Option<u32>,
+    pub kind: CombatReadFieldStatusKind,
+    pub abnormal_states: Vec<CombatHistoryAbnormalState>,
     pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatReadWeather {
+    pub effect: CombatHistoryFieldEffect,
+    pub name: String,
+    pub description: String,
+    pub remaining_rounds: Option<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -177,8 +215,7 @@ pub struct CombatReadSkill {
     pub pp_max: u8,
     pub power: String,
     pub speed: i32,
-    pub property_id: u32,
-    pub property_name: String,
+    pub property: Option<CombatReadProperty>,
     pub damage_type: i32,
     pub description: String,
     pub description2: String,
@@ -215,41 +252,12 @@ pub enum CombatReadLogKind {
     Miss,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", tag = "kind")]
-pub enum CombatReadStatusAnimation {
-    None,
-    Add {
-        statuses: Vec<CombatHistoryAbnormalState>,
-    },
-    RemoveOnly {
-        status: CombatHistoryAbnormalState,
-    },
-    TickThenRemove {
-        status: CombatHistoryAbnormalState,
-    },
-}
-
-impl Default for CombatReadStatusAnimation {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatReadLog {
     pub kind: CombatReadLogKind,
-    pub side: CombatReadSideKind,
+    pub source: CombatReadLogSource,
     pub text: String,
-    #[serde(skip_serializing_if = "CombatReadStatusAnimation::is_none")]
-    pub status_animation: CombatReadStatusAnimation,
-}
-
-impl CombatReadStatusAnimation {
-    pub fn is_none(&self) -> bool {
-        matches!(self, Self::None)
-    }
 }
 
 #[cfg(test)]
@@ -266,15 +274,15 @@ mod tests {
     }
 
     #[test]
-    fn status_animation_none_is_omitted_from_read_log_json() {
+    fn read_log_serializes_its_source_without_animation_payload() {
         let log = CombatReadLog {
             kind: CombatReadLogKind::State,
-            side: CombatReadSideKind::System,
+            source: CombatReadLogSource::System,
             text: "ready".to_string(),
-            status_animation: CombatReadStatusAnimation::None,
         };
 
         let value = serde_json::to_value(log).unwrap();
+        assert_eq!(value["source"], "system");
         assert!(value.get("statusAnimation").is_none());
     }
 
