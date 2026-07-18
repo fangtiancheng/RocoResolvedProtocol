@@ -346,6 +346,115 @@ pub enum CombatHistoryFieldEffectClass {
 }
 
 impl CombatHistoryFieldEffect {
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::ScorchingSun { .. } => "scorching_sun",
+            Self::Rain { .. } => "rain",
+            Self::Hail { .. } => "hail",
+            Self::Thunderstorm { .. } => "thunderstorm",
+            Self::DarkCastle { .. } => "dark_castle",
+            Self::Gale { .. } => "gale",
+            Self::Dreamland { .. } => "dreamland",
+            Self::Miasma { .. } => "miasma",
+            Self::FertileSoil { .. } => "fertile_soil",
+            Self::DragonFormation { .. } => "dragon_formation",
+            Self::MartialRealm { .. } => "martial_realm",
+            Self::HolyLight { .. } => "holy_light",
+            Self::BloodMoon { .. } => "blood_moon",
+            Self::Labyrinth { .. } => "labyrinth",
+            Self::IronWall { .. } => "iron_wall",
+            Self::Fragrance { .. } => "fragrance",
+            Self::Fog { .. } => "fog",
+            Self::Meteor { .. } => "meteor",
+            Self::Mirage { .. } => "mirage",
+            Self::Nebula { .. } => "nebula",
+            Self::Locked { .. } => "locked",
+            Self::Dawn { .. } => "dawn",
+            Self::WindForestFireMountain { .. } => "wind_forest_fire_mountain",
+            Self::Paradise { .. } => "paradise",
+            Self::Unknown25 { .. } => "unknown_25",
+            Self::None => "none",
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::ScorchingSun { .. } => "暴晒天气",
+            Self::Rain { .. } => "阴雨天气",
+            Self::Hail { .. } => "冰雹天气",
+            Self::Thunderstorm { .. } => "雷暴天气",
+            Self::DarkCastle { .. } => "暗黑城环境",
+            Self::Gale { .. } => "疾风天气",
+            Self::Dreamland { .. } => "梦境环境",
+            Self::Miasma { .. } => "瘴气环境",
+            Self::FertileSoil { .. } => "沃土环境",
+            Self::DragonFormation { .. } => "龙阵环境",
+            Self::MartialRealm { .. } => "化境环境",
+            Self::HolyLight { .. } => "圣光天气",
+            Self::BloodMoon { .. } => "血月天气",
+            Self::Labyrinth { .. } => "迷宫环境",
+            Self::IronWall { .. } => "铁壁环境",
+            Self::Fragrance { .. } => "芬芳环境",
+            Self::Fog { .. } => "迷雾天气",
+            Self::Meteor { .. } => "陨石天气",
+            Self::Mirage { .. } => "海市蜃楼环境",
+            Self::Nebula { .. } => "星云天气",
+            Self::Locked { .. } => "锁定",
+            Self::Dawn { .. } => "曙光天气",
+            Self::WindForestFireMountain { .. } => "风林火山环境",
+            Self::Paradise { .. } => "乐园环境",
+            Self::Unknown25 { .. } => "未知环境25",
+            Self::None => "无",
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::ScorchingSun { .. } => {
+                "火系与神火系技能威力伤害上升，水系与神水系技能威力伤害下降，电系技能命中下降"
+            }
+            Self::Rain { .. } => {
+                "火系与神火系技能威力伤害下降，水系与神水系技能威力伤害上升，电系技能命中上升"
+            }
+            Self::Hail { .. } => "冰系技能威力伤害上升",
+            Self::Thunderstorm { .. } => {
+                "电系技能威力伤害上升，非电系宠物行动时若未免疫麻醉则全技能损失PP"
+            }
+            Self::DarkCastle { .. } => "恶魔系宠物受到威力伤害下降",
+            Self::Gale { .. } => "技能先手值相同时翼系宠物优先行动，翼系宠物先手造成的所有伤害上升",
+            Self::Dreamland { .. } => "反转行动顺序",
+            Self::Miasma { .. } => {
+                "对手处于中毒与剧毒异常状态时毒系宠物技能威力伤害上升，非毒系宠物精力回复效果下降"
+            }
+            Self::FertileSoil { .. } => "土系宠物双防能力值上升，水系草系与冰系宠物速度能力值下降",
+            Self::DragonFormation { .. } => {
+                "龙系宠物每回合首次受到威力伤害时，删除龙系对手对应威力技能PP与非龙系攻击者所有威力技能PP"
+            }
+            Self::MartialRealm { .. } => "武系宠物受到威力伤害下降，武系宠物攻击时不被概率闪避",
+            Self::HolyLight { .. } => {
+                "光系技能威力伤害上升，光系宠物受到非神系技能威力伤害下降，双方免疫异常状态"
+            }
+            Self::BloodMoon { .. } => "恶魔系技能威力伤害上升，恶魔系宠物每回合回复精力",
+            Self::Labyrinth { .. } => "虫系宠物受到魔法威力伤害下降，非虫系宠物每回合受到伤害",
+            Self::IronWall { .. } => "机械系宠物速度能力值和受到克制威力伤害下降",
+            Self::Fragrance { .. } => "草系与神草系宠物受到威力伤害下降且每回合回复精力",
+            Self::Fog { .. } => "幽灵系技能先手值略微上升，双方每回合大概率被混乱",
+            Self::Meteor { .. } => "石系技能威力伤害上升，石系宠物受到物理威力伤害下降",
+            Self::Mirage { .. } => {
+                "非神水系宠物每回合受到伤害，为神水系宠物回复等量精力，每回合令不处于控制异常的双方睡眠"
+            }
+            Self::Nebula { .. } => "反转非神系系别的克制抵抗关系",
+            Self::Locked { .. } => "当前无天气环境且无法改变",
+            Self::Dawn { .. } => "非光系宠物行动后强制重置自身正负面强化",
+            Self::WindForestFireMountain { .. } => {
+                "双方被攻击时受到额外伤害，精力低于一半的宠物PP回复效果下降，神火系宠物所受额外伤害和精力阈值下降"
+            }
+            Self::Paradise { .. } => "萌系宠物回复精力效果提升，萌系威力技能无法造成抵抗伤害",
+            Self::Unknown25 { .. } => "未知环境25",
+            Self::None => "当前无天气环境",
+        }
+    }
+
     pub fn raw_id(self) -> u8 {
         match self {
             Self::ScorchingSun { .. } => 1,
@@ -498,6 +607,17 @@ impl CombatHistoryIntimacy {
             _ => 100,
         }
     }
+
+    pub fn label(self) -> String {
+        match self {
+            Self::Progress { closeness } => closeness.to_string(),
+            Self::Close => "亲密".to_string(),
+            Self::NeverLeave => "不弃".to_string(),
+            Self::Inseparable => "形影".to_string(),
+            Self::Soulmate => "灵犀".to_string(),
+            Self::Friendly => "友好".to_string(),
+        }
+    }
 }
 
 impl Default for CombatHistoryIntimacy {
@@ -519,6 +639,13 @@ impl CombatHistorySpiritSex {
             1 => Ok(Self::Male),
             2 => Ok(Self::Female),
             _ => Err(CombatHistoryRawValueError::UnknownSpiritSex { raw }),
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Male => "[♂]",
+            Self::Female => "[♀]",
         }
     }
 }
@@ -605,6 +732,27 @@ pub enum CombatHistorySpiritFieldStatus {
     ExpelImmunity,
 }
 
+impl CombatHistorySpiritFieldStatus {
+    pub fn name(self) -> String {
+        match self {
+            Self::AllAbnormalImmunity => "免疫异常".to_string(),
+            Self::AbnormalImmunity { abnormal_state } => {
+                format!("免疫{}", abnormal_state.name())
+            }
+            Self::NegativeEnhanceImmunity => "免疫负强".to_string(),
+            Self::PpDoubleCost => "双损".to_string(),
+            Self::ExpelImmunity => "免疫驱逐".to_string(),
+        }
+    }
+
+    pub fn name_with_abnormal_state_name(self, abnormal_state_name: &str) -> String {
+        match self {
+            Self::AbnormalImmunity { .. } => format!("免疫{abnormal_state_name}"),
+            _ => self.name(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CombatHistoryItem {
@@ -658,6 +806,19 @@ impl CombatHistoryLockedEnhance {
             Self::Accuracy => 5,
             Self::Evasion => 6,
             Self::Critical => 7,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::PhysicalAttack => "物攻",
+            Self::PhysicalDefense => "物防",
+            Self::MagicAttack => "魔攻",
+            Self::MagicDefense => "魔防",
+            Self::Speed => "速度",
+            Self::Accuracy => "命中",
+            Self::Evasion => "闪避",
+            Self::Critical => "暴击",
         }
     }
 }
@@ -748,6 +909,24 @@ impl CombatHistoryAbnormalState {
             Self::Bewilder => 11,
             Self::Nightmare => 12,
             Self::Bind => 13,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Sleep => "睡眠",
+            Self::Paralysis => "麻醉",
+            Self::Burn => "烧伤",
+            Self::Frozen => "冰冻",
+            Self::Poison => "中毒",
+            Self::Toxic => "剧毒",
+            Self::Confusion => "混乱",
+            Self::Fear => "恐惧",
+            Self::LeechSeed => "寄生",
+            Self::Curse => "诅咒",
+            Self::Bewilder => "迷惑",
+            Self::Nightmare => "梦魇",
+            Self::Bind => "束缚",
         }
     }
 }
@@ -849,6 +1028,21 @@ impl CombatHistorySpiritEquipmentAttr {
             Self::CriticalResistance => 10,
         }
     }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::PhysicalAttack => "物攻",
+            Self::PhysicalDefense => "物防",
+            Self::MagicAttack => "魔攻",
+            Self::MagicDefense => "魔防",
+            Self::Speed => "速度",
+            Self::Energy => "精力",
+            Self::Accuracy => "命中",
+            Self::Evasion => "闪避",
+            Self::Critical => "暴击",
+            Self::CriticalResistance => "暴抗",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -933,6 +1127,21 @@ pub enum CombatHistorySpiritPropertyStage {
     Accuracy,
     Evasion,
     Critical,
+}
+
+impl CombatHistorySpiritPropertyStage {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::PhysicalAttack => "物攻",
+            Self::PhysicalDefense => "物防",
+            Self::MagicAttack => "魔攻",
+            Self::MagicDefense => "魔防",
+            Self::Speed => "速度",
+            Self::Accuracy => "命中",
+            Self::Evasion => "闪避",
+            Self::Critical => "暴击",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1092,6 +1301,28 @@ mod tests {
         assert!(CombatHistoryFieldEffect::Fragrance { rounds_left: 2 }.is_environment());
         assert!(CombatHistoryFieldEffect::Locked { rounds_left: 2 }.has_no_weather_environment());
         assert!(CombatHistoryFieldEffect::Unknown25 { rounds_left: 2 }.has_no_weather_environment());
+    }
+
+    #[test]
+    fn combat_domain_values_own_their_display_metadata() {
+        let rain = CombatHistoryFieldEffect::Rain { rounds_left: 2 };
+        assert_eq!(rain.key(), "rain");
+        assert_eq!(rain.name(), "阴雨天气");
+        assert!(!rain.description().is_empty());
+
+        assert_eq!(CombatHistoryAbnormalState::Frozen.name(), "冰冻");
+        assert_eq!(
+            CombatHistorySpiritFieldStatus::AbnormalImmunity {
+                abnormal_state: CombatHistoryAbnormalState::Frozen,
+            }
+            .name(),
+            "免疫冰冻"
+        );
+        assert_eq!(CombatHistorySpiritEquipmentAttr::MagicAttack.name(), "魔攻");
+        assert_eq!(CombatHistorySpiritPropertyStage::Evasion.name(), "闪避");
+        assert_eq!(CombatHistoryLockedEnhance::Critical.name(), "暴击");
+        assert_eq!(CombatHistorySpiritSex::Female.label(), "[♀]");
+        assert_eq!(CombatHistoryIntimacy::Soulmate.label(), "灵犀");
     }
 
     #[test]
