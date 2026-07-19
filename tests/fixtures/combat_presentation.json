@@ -5,6 +5,7 @@
     "mySpiritIds": [12059],
     "rivalSpiritIds": []
   },
+  "initialState": { "hp": [] },
   "batches": [
     {
       "cues": [
@@ -29,8 +30,13 @@
           "operation": {
             "kind": "hp_change",
             "actor": { "side": "rival", "position": 1, "spiritId": 30 },
+            "from": 500,
             "to": 380,
-            "delta": -120
+            "delta": -120,
+            "presentation": {
+              "critical": true,
+              "relation": "strongly_effective"
+            }
           }
         },
         {

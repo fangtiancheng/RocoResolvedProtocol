@@ -14,7 +14,21 @@ pub struct CombatPresentation {
     pub serial: u32,
     pub trigger: CombatPresentationTrigger,
     pub preloads: CombatPresentationPreloads,
+    pub initial_state: CombatPresentationInitialState,
     pub batches: Vec<CombatPresentationBatch>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatPresentationInitialState {
+    pub hp: Vec<CombatPresentationHpSnapshot>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatPresentationHpSnapshot {
+    pub actor: CombatPresentationPetActor,
+    pub current_hp: u16,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -242,6 +256,23 @@ pub enum CombatFloatingText {
     Command { text: String },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CombatDamageRelation {
+    Neutral,
+    Resisted,
+    StronglyResisted,
+    Effective,
+    StronglyEffective,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CombatHpChangePresentation {
+    pub critical: bool,
+    pub relation: CombatDamageRelation,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
@@ -271,10 +302,16 @@ pub enum CombatPresentationOperation {
         effect_id: u32,
         playback: CombatEffectPlayback,
     },
-    HpChange {
+    HpSet {
         actor: CombatPresentationPetActor,
         to: u16,
+    },
+    HpChange {
+        actor: CombatPresentationPetActor,
+        from: u16,
+        to: u16,
         delta: i32,
+        presentation: CombatHpChangePresentation,
     },
 }
 
