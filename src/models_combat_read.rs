@@ -41,15 +41,142 @@ pub enum CombatFinishReason {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", try_from = "RawCombatStatusSnapshot")]
 pub struct CombatStatusSnapshot {
-    pub phase: CombatPhase,
+    phase: CombatPhase,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub presentation: Option<CombatPresentation>,
-    pub round: u32,
+    presentation: Option<CombatPresentation>,
+    round: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub finish_reason: Option<CombatFinishReason>,
+    finish_reason: Option<CombatFinishReason>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawCombatStatusSnapshot {
+    phase: CombatPhase,
+    presentation: Option<CombatPresentation>,
+    round: u32,
+    finish_reason: Option<CombatFinishReason>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CombatStatusSnapshotError {
+    MissingPresentation { phase: CombatPhase },
+    UnexpectedPresentation { phase: CombatPhase },
+    MissingFinishReason { phase: CombatPhase },
+    UnexpectedFinishReason { phase: CombatPhase },
+}
+
+impl CombatStatusSnapshot {
+    pub fn new(
+        phase: CombatPhase,
+        round: u32,
+        presentation: Option<CombatPresentation>,
+        finish_reason: Option<CombatFinishReason>,
+    ) -> Result<Self, CombatStatusSnapshotError> {
+        let requires_presentation = matches!(
+            phase,
+            CombatPhase::PlayingOpening
+                | CombatPhase::PlayingRoundResult
+                | CombatPhase::WaitingMyExtraSwitch
+                | CombatPhase::WaitingOpponentExtraSwitch
+        );
+        match (requires_presentation, presentation.is_some()) {
+            (true, false) => {
+                return Err(CombatStatusSnapshotError::MissingPresentation { phase });
+            }
+            (false, true) => {
+                return Err(CombatStatusSnapshotError::UnexpectedPresentation { phase });
+            }
+            _ => {}
+        }
+
+        let requires_finish_reason = matches!(phase, CombatPhase::Finished | CombatPhase::Aborted);
+        let allows_finish_reason =
+            requires_finish_reason || phase == CombatPhase::PlayingRoundResult;
+        match (
+            requires_finish_reason,
+            allows_finish_reason,
+            finish_reason.is_some(),
+        ) {
+            (true, _, false) => {
+                return Err(CombatStatusSnapshotError::MissingFinishReason { phase });
+            }
+            (false, false, true) => {
+                return Err(CombatStatusSnapshotError::UnexpectedFinishReason { phase });
+            }
+            _ => {}
+        }
+
+        Ok(Self {
+            phase,
+            presentation,
+            round,
+            finish_reason,
+        })
+    }
+
+    pub fn phase(&self) -> CombatPhase {
+        self.phase
+    }
+
+    pub fn presentation(&self) -> Option<&CombatPresentation> {
+        self.presentation.as_ref()
+    }
+
+    pub fn into_presentation(self) -> Option<CombatPresentation> {
+        self.presentation
+    }
+
+    pub fn round(&self) -> u32 {
+        self.round
+    }
+
+    pub fn finish_reason(&self) -> Option<CombatFinishReason> {
+        self.finish_reason
+    }
+}
+
+impl TryFrom<RawCombatStatusSnapshot> for CombatStatusSnapshot {
+    type Error = CombatStatusSnapshotError;
+
+    fn try_from(value: RawCombatStatusSnapshot) -> Result<Self, Self::Error> {
+        Self::new(
+            value.phase,
+            value.round,
+            value.presentation,
+            value.finish_reason,
+        )
+    }
+}
+
+impl std::fmt::Display for CombatStatusSnapshotError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingPresentation { phase } => {
+                write!(formatter, "combat phase {phase:?} requires a presentation")
+            }
+            Self::UnexpectedPresentation { phase } => {
+                write!(
+                    formatter,
+                    "combat phase {phase:?} cannot carry a presentation"
+                )
+            }
+            Self::MissingFinishReason { phase } => {
+                write!(formatter, "combat phase {phase:?} requires a finish reason")
+            }
+            Self::UnexpectedFinishReason { phase } => {
+                write!(
+                    formatter,
+                    "combat phase {phase:?} cannot carry a finish reason"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for CombatStatusSnapshotError {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -288,12 +415,8 @@ mod tests {
 
     #[test]
     fn status_snapshot_contains_only_the_command_boundary_state() {
-        let status = CombatStatusSnapshot {
-            phase: CombatPhase::WaitingPlayerAction,
-            presentation: None,
-            round: 3,
-            finish_reason: None,
-        };
+        let status =
+            CombatStatusSnapshot::new(CombatPhase::WaitingPlayerAction, 3, None, None).unwrap();
 
         let value = serde_json::to_value(status).unwrap();
         assert_eq!(value["phase"], "waiting_player_action");
@@ -302,5 +425,39 @@ mod tests {
         assert!(value.get("finishReason").is_none());
         assert!(value.get("protocolTrace").is_none());
         assert!(value.get("observedHistory").is_none());
+    }
+
+    #[test]
+    fn status_snapshot_rejects_phase_payload_mismatches() {
+        assert_eq!(
+            CombatStatusSnapshot::new(CombatPhase::Finished, 3, None, None).unwrap_err(),
+            CombatStatusSnapshotError::MissingFinishReason {
+                phase: CombatPhase::Finished
+            }
+        );
+        assert_eq!(
+            CombatStatusSnapshot::new(
+                CombatPhase::WaitingPlayerAction,
+                3,
+                None,
+                Some(CombatFinishReason::Win),
+            )
+            .unwrap_err(),
+            CombatStatusSnapshotError::UnexpectedFinishReason {
+                phase: CombatPhase::WaitingPlayerAction
+            }
+        );
+    }
+
+    #[test]
+    fn status_snapshot_deserialization_enforces_the_same_invariants() {
+        let error = serde_json::from_value::<CombatStatusSnapshot>(serde_json::json!({
+            "phase": "idle",
+            "round": 0,
+            "finishReason": "win"
+        }))
+        .unwrap_err();
+
+        assert!(error.to_string().contains("cannot carry a finish reason"));
     }
 }
